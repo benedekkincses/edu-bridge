@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { userService } from "../services/userService.js";
 
 /**
  * @swagger
@@ -21,52 +22,55 @@ import { Request, Response } from "express";
  *                     type: object
  *                     properties:
  *                       id:
- *                         type: number
- *                         example: 1
- *                       name:
  *                         type: string
- *                         example: "John Doe"
+ *                         example: "uuid-here"
  *                       email:
  *                         type: string
  *                         example: "john@example.com"
- *                       role:
+ *                       firstName:
  *                         type: string
- *                         example: "student"
+ *                         example: "John"
+ *                       lastName:
+ *                         type: string
+ *                         example: "Doe"
+ *                       phone:
+ *                         type: string
+ *                         example: "+1234567890"
+ *                       avatar:
+ *                         type: string
+ *                         example: "https://example.com/avatar.jpg"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
  *                 count:
  *                   type: number
  *                   example: 3
  *                 timestamp:
  *                   type: string
  *                   format: date-time
+ *       500:
+ *         description: Server error
  */
-export const getUsers = (req: Request, res: Response) => {
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "student",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "teacher",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: "admin",
-    },
-  ];
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await userService.getAllUsers();
+    const count = users.length;
 
-  res.json({
-    users,
-    count: users.length,
-    timestamp: new Date().toISOString(),
-  });
+    res.json({
+      users,
+      count,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to fetch users',
+    });
+  }
 };
 
 /**
@@ -81,7 +85,7 @@ export const getUsers = (req: Request, res: Response) => {
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *         description: User ID
  *     responses:
  *       200:
@@ -95,53 +99,50 @@ export const getUsers = (req: Request, res: Response) => {
  *                   type: object
  *                   properties:
  *                     id:
- *                       type: number
- *                     name:
  *                       type: string
  *                     email:
  *                       type: string
- *                     role:
+ *                     firstName:
  *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                     avatar:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Server error
  */
-export const getUserById = (req: Request, res: Response) => {
-  const { id } = req.params;
-  const userId = parseInt(id);
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
 
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "student",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "teacher",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: "admin",
-    },
-  ];
+    const user = await userService.getUserById(id);
 
-  const user = users.find((u) => u.id === userId);
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+        message: `No user found with ID ${id}`,
+      });
+    }
 
-  if (!user) {
-    return res.status(404).json({
-      error: "User not found",
-      message: `No user found with ID ${userId}`,
+    res.json({
+      user,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to fetch user',
     });
   }
-
-  res.json({
-    user,
-    timestamp: new Date().toISOString(),
-  });
 };

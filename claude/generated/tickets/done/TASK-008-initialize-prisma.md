@@ -3,25 +3,25 @@
 **Type:** Task
 **Epic:** EPIC-002
 **Priority:** Critical
-**Status:** Backlog
-**Assignee:** Unassigned
+**Status:** Done
+**Assignee:** Claude
 
 ## Description
 Initialize Prisma ORM in the API package and configure it to work with PostgreSQL database.
 
 ## Tasks
-- [ ] Install Prisma and Prisma Client in packages/api
-- [ ] Run `npx prisma init`
-- [ ] Configure DATABASE_URL in .env
-- [ ] Create prisma/schema.prisma with datasource and generator
-- [ ] Test connection to PostgreSQL
-- [ ] Add Prisma scripts to package.json (migrate, studio, generate, seed)
+- [x] Install Prisma and Prisma Client in edu-bridge-be
+- [x] Run `npx prisma init`
+- [x] Configure DATABASE_URL in .env
+- [x] Create prisma/schema.prisma with datasource and generator
+- [x] Test connection to PostgreSQL
+- [x] Add Prisma scripts to package.json (migrate, studio, generate, seed)
 
 ## Acceptance Criteria
-- Prisma CLI commands work from packages/api
-- Database connection successful
-- Prisma Client can be imported in TypeScript
-- `npm run db:studio` opens Prisma Studio
+- [x] Prisma CLI commands work from edu-bridge-be
+- [x] Database connection successful
+- [x] Prisma Client can be imported in TypeScript
+- [x] `npm run db:studio` opens Prisma Studio
 
 ## Technical Notes
 ```prisma
