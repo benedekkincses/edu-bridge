@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { userService } from "../services/userService.js";
 import { getUserInfo } from "../middleware/keycloakAuth.js";
 
 /**
@@ -25,43 +24,31 @@ import { getUserInfo } from "../middleware/keycloakAuth.js";
  *                     type: object
  *                     properties:
  *                       id:
+ *                         type: number
+ *                         example: 1
+ *                       name:
  *                         type: string
- *                         example: "uuid-here"
+ *                         example: "John Doe"
  *                       email:
  *                         type: string
  *                         example: "john@example.com"
- *                       firstName:
+ *                       role:
  *                         type: string
- *                         example: "John"
- *                       lastName:
- *                         type: string
- *                         example: "Doe"
- *                       phone:
- *                         type: string
- *                         example: "+1234567890"
- *                       avatar:
- *                         type: string
- *                         example: "https://example.com/avatar.jpg"
- *                       createdAt:
- *                         type: string
- *                         format: date-time
- *                       updatedAt:
- *                         type: string
- *                         format: date-time
+ *                         example: "student"
  *                 count:
  *                   type: number
  *                   example: 3
  *                 timestamp:
  *                   type: string
  *                   format: date-time
- *       500:
- *         description: Server error
  *                 currentUser:
  *                   type: object
  *                   properties:
  *                     id:
  *                       type: string
  *                     username:
+ *                       type: string
+ *                     email:
  *                       type: string
  *                     roles:
  *                       type: array
@@ -71,11 +58,9 @@ import { getUserInfo } from "../middleware/keycloakAuth.js";
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       500:
+ *         description: Server error
  */
-export const getUsers = async (req: Request, res: Response) => {
-  try {
-    const users = await userService.getAllUsers();
-    const count = users.length;
 export const getUsers = (req: Request, res: Response) => {
   try {
     const currentUser = getUserInfo(req);
@@ -108,18 +93,6 @@ export const getUsers = (req: Request, res: Response) => {
       },
     ];
 
-    res.json({
-      users,
-      count,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch users',
-    });
-  }
     res.json({
       users,
       count: users.length,
@@ -167,23 +140,23 @@ export const getUsers = (req: Request, res: Response) => {
  *                   type: object
  *                   properties:
  *                     id:
+ *                       type: number
+ *                     name:
  *                       type: string
  *                     email:
  *                       type: string
- *                     firstName:
+ *                     role:
  *                       type: string
- *                     lastName:
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 requestedBy:
+ *                   type: object
+ *                   properties:
+ *                     id:
  *                       type: string
- *                     phone:
+ *                     username:
  *                       type: string
- *                     avatar:
- *                       type: string
- *                     createdAt:
- *                       type: string
- *                       format: date-time
- *                     updatedAt:
- *                       type: string
- *                       format: date-time
  *       401:
  *         description: Unauthorized
  *       404:
@@ -191,9 +164,6 @@ export const getUsers = (req: Request, res: Response) => {
  *       500:
  *         description: Server error
  */
-export const getUserById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
 export const getUserById = (req: Request, res: Response) => {
   try {
     const currentUser = getUserInfo(req);
@@ -207,7 +177,6 @@ export const getUserById = (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = parseInt(id);
 
-    const user = await userService.getUserById(id);
     // Mock user data
     const users = [
       {
@@ -235,27 +204,10 @@ export const getUserById = (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         error: "User not found",
-        message: `No user found with ID ${id}`,
-      });
-    }
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found",
         message: `No user found with ID ${userId}`,
       });
     }
 
-    res.json({
-      user,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error fetching user by ID:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch user',
-    });
-  }
     res.json({
       user,
       timestamp: new Date().toISOString(),
