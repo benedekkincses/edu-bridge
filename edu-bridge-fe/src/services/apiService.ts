@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:3000";
+// Use your computer's IP address for mobile devices
+const BASE_URL = "http://10.1.2.98:3000";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
