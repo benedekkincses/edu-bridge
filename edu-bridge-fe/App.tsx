@@ -3,11 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
-import HomeScreen from "./src/screens/HomeScreen";
-import HelloScreen from "./src/screens/HelloScreen";
-import UsersScreen from "./src/screens/UsersScreen";
+import MainLayout from "./src/components/MainLayout";
 import LoginScreen from "./src/screens/LoginScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 
 const Stack = createStackNavigator();
@@ -29,29 +26,14 @@ const AppNavigator: React.FC = () => {
       <StatusBar style="auto" />
       <Stack.Navigator>
         {isAuthenticated ? (
-          // Authenticated screens
-          <>
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ title: "Edu Bridge" }}
-            />
-            <Stack.Screen
-              name="Hello"
-              component={HelloScreen}
-              options={{ title: "Hello API" }}
-            />
-            <Stack.Screen
-              name="Users"
-              component={UsersScreen}
-              options={{ title: "Users" }}
-            />
-            <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: "Profile" }}
-            />
-          </>
+          // Authenticated screens - Use MainLayout
+          <Stack.Screen
+            name="Main"
+            component={MainLayout}
+            options={{
+              headerShown: false,
+            }}
+          />
         ) : (
           // Unauthenticated screens
           <Stack.Screen
