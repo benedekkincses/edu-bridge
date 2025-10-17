@@ -55,7 +55,8 @@ function getKey(header: any, callback: any) {
       callback(err);
       return;
     }
-    const signingKey = key?.getPublicKey();
+    // The key object has either publicKey or rsaPublicKey property
+    const signingKey = (key as any).publicKey || (key as any).rsaPublicKey;
     callback(null, signingKey);
   });
 }
@@ -89,7 +90,8 @@ export const verifyToken = (
     token,
     getKey,
     {
-      audience: CLIENT_ID,
+      // Accept tokens from both frontend and backend clients
+      // audience can be 'account', 'edu-bridge-backend', or 'edu-bridge-frontend'
       issuer: `${KEYCLOAK_URL}/realms/${REALM}`,
       algorithms: ["RS256"],
     },
@@ -103,8 +105,18 @@ export const verifyToken = (
         });
       }
 
+      // Verify the token is from our frontend client
+      const decodedToken = decoded as KeycloakToken;
+      if (decodedToken.azp !== "edu-bridge-frontend" && decodedToken.azp !== CLIENT_ID) {
+        return res.status(401).json({
+          error: "Invalid token",
+          message: "Token not issued for this application",
+          details: `Expected azp: edu-bridge-frontend or ${CLIENT_ID}, got: ${decodedToken.azp}`,
+        });
+      }
+
       // Add user info to request
-      req.user = decoded as KeycloakToken;
+      req.user = decodedToken;
       next();
     }
   );
