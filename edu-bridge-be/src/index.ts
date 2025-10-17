@@ -7,7 +7,7 @@ import userRoutes from "./routes/userRoutes.ts";
 const app = express();
 const port = process.env.PORT || 3000;
 
-// CORS middleware
+// CORS middleware - Allow all origins for development
 app.use(
   cors({
     origin: true,
