@@ -1,10 +1,21 @@
 import express from "express";
+import cors from "cors";
 import { specs, swaggerUi } from "./config/swagger.ts";
 import helloRoutes from "./routes/helloRoutes.ts";
 import userRoutes from "./routes/userRoutes.ts";
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// CORS middleware
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Middleware
 app.use(express.json());
