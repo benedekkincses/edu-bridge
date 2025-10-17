@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUsers, getUserById } from "../controllers/userController.js";
+import { getCurrentUser } from "../controllers/userController.js";
 import { verifyToken } from "../middleware/keycloakAuth.js";
 
 const router = Router();
@@ -7,7 +7,7 @@ const router = Router();
 // Apply authentication middleware to all user routes
 router.use(verifyToken);
 
-router.get("/users", getUsers);
-router.get("/users/:id", getUserById);
+// Get current authenticated user info from Keycloak token
+router.get("/users/me", getCurrentUser);
 
 export default router;
