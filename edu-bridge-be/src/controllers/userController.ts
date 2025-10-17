@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
+import { getUserInfo } from "../middleware/keycloakAuth.js";
 
 /**
  * @swagger
  * /api/users:
  *   get:
  *     summary: Get all users
- *     description: Returns a list of all users in the system
+ *     description: Returns a list of all users in the system (requires authentication)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Successful response
@@ -38,35 +41,71 @@ import { Request, Response } from "express";
  *                 timestamp:
  *                   type: string
  *                   format: date-time
+ *                 currentUser:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     username:
+ *                       type: string
+ *                     roles:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 export const getUsers = (req: Request, res: Response) => {
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "student",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "teacher",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: "admin",
-    },
-  ];
+  try {
+    const currentUser = getUserInfo(req);
 
-  res.json({
-    users,
-    count: users.length,
-    timestamp: new Date().toISOString(),
-  });
+    if (!currentUser) {
+      return res.status(401).json({
+        error: "User not authenticated",
+      });
+    }
+
+    // Mock user data
+    const users = [
+      {
+        id: 1,
+        name: "John Doe",
+        email: "john@example.com",
+        role: "student",
+      },
+      {
+        id: 2,
+        name: "Jane Smith",
+        email: "jane@example.com",
+        role: "teacher",
+      },
+      {
+        id: 3,
+        name: "Bob Johnson",
+        email: "bob@example.com",
+        role: "admin",
+      },
+    ];
+
+    res.json({
+      users,
+      count: users.length,
+      timestamp: new Date().toISOString(),
+      currentUser: {
+        id: currentUser.sub,
+        username: currentUser.preferred_username,
+        email: currentUser.email,
+        roles: currentUser.realm_access?.roles || [],
+      },
+    });
+  } catch (error) {
+    console.error("Error getting users:", error);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
 };
 
 /**
@@ -74,8 +113,10 @@ export const getUsers = (req: Request, res: Response) => {
  * /api/users/{id}:
  *   get:
  *     summary: Get user by ID
- *     description: Returns a specific user by their ID
+ *     description: Returns a specific user by their ID (requires authentication)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -102,46 +143,67 @@ export const getUsers = (req: Request, res: Response) => {
  *                       type: string
  *                     role:
  *                       type: string
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: User not found
  */
 export const getUserById = (req: Request, res: Response) => {
-  const { id } = req.params;
-  const userId = parseInt(id);
+  try {
+    const currentUser = getUserInfo(req);
 
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "student",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "teacher",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: "admin",
-    },
-  ];
+    if (!currentUser) {
+      return res.status(401).json({
+        error: "User not authenticated",
+      });
+    }
 
-  const user = users.find((u) => u.id === userId);
+    const { id } = req.params;
+    const userId = parseInt(id);
 
-  if (!user) {
-    return res.status(404).json({
-      error: "User not found",
-      message: `No user found with ID ${userId}`,
+    // Mock user data
+    const users = [
+      {
+        id: 1,
+        name: "John Doe",
+        email: "john@example.com",
+        role: "student",
+      },
+      {
+        id: 2,
+        name: "Jane Smith",
+        email: "jane@example.com",
+        role: "teacher",
+      },
+      {
+        id: 3,
+        name: "Bob Johnson",
+        email: "bob@example.com",
+        role: "admin",
+      },
+    ];
+
+    const user = users.find((u) => u.id === userId);
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+        message: `No user found with ID ${userId}`,
+      });
+    }
+
+    res.json({
+      user,
+      timestamp: new Date().toISOString(),
+      requestedBy: {
+        id: currentUser.sub,
+        username: currentUser.preferred_username,
+      },
+    });
+  } catch (error) {
+    console.error("Error getting user by ID:", error);
+    res.status(500).json({
+      error: "Internal server error",
     });
   }
-
-  res.json({
-    user,
-    timestamp: new Date().toISOString(),
-  });
 };

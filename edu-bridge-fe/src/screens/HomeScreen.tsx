@@ -7,11 +7,13 @@ import {
   SafeAreaView,
 } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useAuth } from "../contexts/AuthContext";
 
 type RootStackParamList = {
   Home: undefined;
   Hello: undefined;
   Users: undefined;
+  Profile: undefined;
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, "Home">;
@@ -21,11 +23,22 @@ interface Props {
 }
 
 export default function HomeScreen({ navigation }: Props) {
+  const { user } = useAuth();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Welcome to Edu Bridge</Text>
         <Text style={styles.subtitle}>Your educational platform</Text>
+
+        {user && (
+          <View style={styles.userInfo}>
+            <Text style={styles.welcomeText}>
+              Welcome, {user.firstName || user.username}!
+            </Text>
+            <Text style={styles.roleText}>Role: {user.roles.join(", ")}</Text>
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.button}
@@ -39,6 +52,13 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate("Users")}
         >
           <Text style={styles.buttonText}>View Users</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.profileButton]}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <Text style={styles.buttonText}>View Profile</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -66,8 +86,33 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 40,
+    marginBottom: 20,
     textAlign: "center",
+  },
+  userInfo: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  roleText: {
+    fontSize: 14,
+    color: "#666",
   },
   button: {
     backgroundColor: "#007AFF",
@@ -82,6 +127,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    marginTop: 15,
   },
   buttonText: {
     color: "white",
@@ -90,6 +136,8 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: "#34C759",
-    marginTop: 15,
+  },
+  profileButton: {
+    backgroundColor: "#FF9500",
   },
 });

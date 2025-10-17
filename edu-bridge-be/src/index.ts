@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { specs, swaggerUi } from "./config/swagger.ts";
-import helloRoutes from "./routes/helloRoutes.ts";
-import userRoutes from "./routes/userRoutes.ts";
+import { specs, swaggerUi } from "./config/swagger.js";
+import helloRoutes from "./routes/helloRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,16 +27,28 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 // Routes
 app.use("/api", helloRoutes);
 app.use("/api", userRoutes);
+app.use("/api/auth", authRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({
     message: "Welcome to Edu Bridge API",
     documentation: "Visit /api-docs for Swagger documentation",
+    authentication: "This API uses Keycloak for authentication",
     endpoints: {
       hello: "GET /api/hello",
-      users: "GET /api/users",
-      userById: "GET /api/users/:id",
+      users: "GET /api/users (requires authentication)",
+      userById: "GET /api/users/:id (requires authentication)",
+      auth: {
+        profile: "GET /api/auth/profile (requires authentication)",
+        verify: "GET /api/auth/verify (requires authentication)",
+        logout: "POST /api/auth/logout",
+      },
+    },
+    keycloak: {
+      url: "http://localhost:8080",
+      realm: "myrealm",
+      clientId: "edu-bridge-backend",
     },
   });
 });
