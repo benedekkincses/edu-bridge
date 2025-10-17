@@ -91,21 +91,19 @@ const AppHeader: React.FC = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* School Selector Modal */}
+      {/* School Selector Dropdown */}
       <Modal
         visible={showSchoolSelector}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowSchoolSelector(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.schoolSelectorModal}>
-            <View style={styles.schoolSelectorHeader}>
-              <Text style={styles.schoolSelectorTitle}>Select School</Text>
-              <TouchableOpacity onPress={() => setShowSchoolSelector(false)}>
-                <Text style={styles.closeButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
+        <TouchableOpacity
+          style={styles.transparentOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSchoolSelector(false)}
+        >
+          <View style={styles.schoolSelectorDropdown}>
             <FlatList
               data={schools}
               keyExtractor={(item) => item.id}
@@ -135,7 +133,7 @@ const AppHeader: React.FC = () => {
               )}
             />
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -191,6 +189,13 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingRight: 16,
   },
+  transparentOverlay: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingTop: 60,
+    paddingLeft: 16,
+  },
   profileMenu: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -226,31 +231,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#FF3B30",
   },
-  schoolSelectorModal: {
+  schoolSelectorDropdown: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "50%",
-    width: "100%",
-    position: "absolute",
-    bottom: 0,
-  },
-  schoolSelectorHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  schoolSelectorTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
-  closeButton: {
-    fontSize: 24,
-    color: "#666",
+    borderRadius: 12,
+    minWidth: 250,
+    maxWidth: 300,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   schoolItem: {
     flexDirection: "row",
