@@ -1,6 +1,6 @@
 # EduBridge Project Board
 
-Last Updated: 2025-10-17
+Last Updated: 2025-10-17 11:34 CET
 
 ## Summary
 
@@ -28,7 +28,7 @@ Last Updated: 2025-10-17
 **Priority:** Critical | **Status:** Backlog | [📄 Details](./tickets/EPIC-002-database-setup.md)
 
 **Tasks:**
-- [ ] [TASK-007: Set up PostgreSQL with Docker](./tickets/TASK-007-setup-postgresql.md)
+- [x] [TASK-007: Set up PostgreSQL with Docker](./tickets/TASK-007-setup-postgresql.md) ✅
 - [ ] [TASK-008: Initialize Prisma](./tickets/TASK-008-initialize-prisma.md)
 - [ ] [TASK-009: Define User and Auth Models](./tickets/TASK-009-define-user-auth-models.md)
 - [ ] TASK-010: Define School and Admin models
@@ -234,7 +234,9 @@ Last Updated: 2025-10-17
 
 ## Done
 
-*No tasks completed yet*
+### Completed Tasks
+
+- [x] [TASK-007: Set up PostgreSQL with Docker](./tickets/TASK-007-setup-postgresql.md) - PostgreSQL 15-alpine running on port 5435
 
 ---
 

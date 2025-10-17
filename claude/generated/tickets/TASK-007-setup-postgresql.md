@@ -3,19 +3,27 @@
 **Type:** Task
 **Epic:** EPIC-002
 **Priority:** Critical
-**Status:** Backlog
-**Assignee:** Unassigned
+**Status:** Done
+**Assignee:** Claude
 
 ## Description
 Set up PostgreSQL database using Docker for local development and create docker-compose configuration.
 
 ## Tasks
-- [ ] Create docker-compose.dev.yml with PostgreSQL service
-- [ ] Configure PostgreSQL with environment variables
-- [ ] Set up persistent volume for database data
-- [ ] Create .env.example with DATABASE_URL
-- [ ] Test database connection
-- [ ] Document database setup in README
+- [x] Create docker-compose.dev.yml with PostgreSQL service
+- [x] Configure PostgreSQL with environment variables
+- [x] Set up persistent volume for database data
+- [x] Create .env.example with DATABASE_URL
+- [x] Test database connection
+- [x] Document database setup in README
+
+## Implementation Notes
+- PostgreSQL 15-alpine running on port 5435 (changed from 5432 due to port conflict)
+- All files created in /infra directory
+- Container name: edubridge-postgres-dev
+- Database name: edubridge
+- User: edubridge
+- Default password: devpassword123 (can be overridden in .env)
 
 ## Acceptance Criteria
 - `docker-compose up postgres` starts PostgreSQL
