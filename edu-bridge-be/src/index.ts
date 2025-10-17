@@ -1,6 +1,7 @@
 import express from "express";
 import { specs, swaggerUi } from "./config/swagger.ts";
 import helloRoutes from "./routes/helloRoutes.ts";
+import userRoutes from "./routes/userRoutes.ts";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Routes
 app.use("/api", helloRoutes);
+app.use("/api", userRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {
@@ -21,6 +23,8 @@ app.get("/", (req, res) => {
     documentation: "Visit /api-docs for Swagger documentation",
     endpoints: {
       hello: "GET /api/hello",
+      users: "GET /api/users",
+      userById: "GET /api/users/:id",
     },
   });
 });
