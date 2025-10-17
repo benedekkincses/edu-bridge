@@ -408,77 +408,66 @@ Appointment {
 ### Project Structure (Monorepo)
 
 ```
-edu-bridge/
+edu-bridge/                           # Project root
+├── edu-bridge-be/                    # Node.js backend (TypeScript)
+│   ├── src/
+│   │   ├── modules/                  # Feature modules
+│   │   │   ├── auth/                 # OIDC + JWT validation
+│   │   │   ├── users/                # User profiles, privacy
+│   │   │   ├── schools/              # School CRUD
+│   │   │   ├── classes/              # Class + TeacherRoom
+│   │   │   ├── children/             # Child data management
+│   │   │   ├── groups/               # Group chat management
+│   │   │   ├── messages/             # DMs, threads, polling
+│   │   │   ├── news/                 # News feed + templates
+│   │   │   ├── events/               # Events + RSVP
+│   │   │   ├── appointments/         # Booked4US integration
+│   │   │   ├── aimee/                # AImee chat proxy
+│   │   │   └── storage/              # File uploads (MinIO)
+│   │   ├── db/
+│   │   │   ├── schema.prisma         # Prisma schema
+│   │   │   └── migrations/
+│   │   ├── common/
+│   │   │   ├── middleware/           # Auth, error handling
+│   │   │   ├── polling/              # Long polling manager
+│   │   │   └── permissions/          # Permission checker
+│   │   ├── config/                   # Environment config
+│   │   └── server.ts                 # App entry point
+│   ├── tests/
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── edu-bridge-fe/                    # React Native mobile app (Expo)
+│   ├── src/
+│   │   ├── features/                 # Feature modules
+│   │   │   ├── auth/                 # Login, OIDC flow
+│   │   │   ├── dashboard/            # Main dashboard
+│   │   │   ├── schools/              # School management (admin)
+│   │   │   ├── classes/              # Class views
+│   │   │   ├── groups/               # Group chats
+│   │   │   ├── messages/             # Direct messaging
+│   │   │   ├── news/                 # News feed
+│   │   │   ├── events/               # Events calendar
+│   │   │   ├── appointments/         # Meeting booking
+│   │   │   ├── aimee/                # AImee chatbot
+│   │   │   └── profile/              # User profile + privacy
+│   │   ├── shared/
+│   │   │   ├── components/           # Reusable UI components
+│   │   │   ├── hooks/                # Custom hooks
+│   │   │   └── navigation/           # React Navigation
+│   │   ├── stores/                   # Zustand stores
+│   │   └── api/                      # API client
+│   ├── android/                      # Android native code
+│   ├── ios/                          # iOS native code
+│   ├── App.tsx                       # App entry point
+│   ├── app.json                      # Expo configuration
+│   ├── babel.config.js
+│   ├── tsconfig.json
+│   └── package.json
+│
 ├── packages/
-│   ├── api/                          # Node.js backend
+│   ├── api/                          # Shared API layer (if needed)
 │   │   ├── src/
-│   │   │   ├── modules/              # Feature modules
-│   │   │   │   ├── auth/             # OIDC + JWT validation
-│   │   │   │   ├── users/            # User profiles, privacy
-│   │   │   │   ├── schools/          # School CRUD
-│   │   │   │   ├── classes/          # Class + TeacherRoom
-│   │   │   │   ├── children/         # Child data management
-│   │   │   │   ├── groups/           # Group chat management
-│   │   │   │   ├── messages/         # DMs, threads, polling
-│   │   │   │   ├── news/             # News feed + templates
-│   │   │   │   ├── events/           # Events + RSVP
-│   │   │   │   ├── appointments/     # Booked4US integration
-│   │   │   │   ├── aimee/            # AImee chat proxy
-│   │   │   │   └── storage/          # File uploads (MinIO)
-│   │   │   ├── db/
-│   │   │   │   ├── schema.prisma     # Prisma schema
-│   │   │   │   └── migrations/
-│   │   │   ├── common/
-│   │   │   │   ├── middleware/       # Auth, error handling
-│   │   │   │   ├── polling/          # Long polling manager
-│   │   │   │   └── permissions/      # Permission checker
-│   │   │   ├── config/               # Environment config
-│   │   │   └── server.ts             # App entry point
-│   │   ├── tests/
-│   │   ├── tsconfig.json
-│   │   └── package.json
-│   │
-│   ├── web/                          # React web portal
-│   │   ├── src/
-│   │   │   ├── features/
-│   │   │   │   ├── auth/             # Login, OIDC flow
-│   │   │   │   ├── dashboard/        # Main dashboard
-│   │   │   │   ├── schools/          # School management (admin)
-│   │   │   │   ├── classes/          # Class views
-│   │   │   │   ├── groups/           # Group chats
-│   │   │   │   ├── messages/         # Direct messaging
-│   │   │   │   ├── news/             # News feed
-│   │   │   │   ├── events/           # Events calendar
-│   │   │   │   ├── appointments/     # Meeting booking
-│   │   │   │   ├── aimee/            # AImee chatbot
-│   │   │   │   └── profile/          # User profile + privacy
-│   │   │   ├── shared/
-│   │   │   │   ├── components/       # Reusable UI components
-│   │   │   │   ├── hooks/            # Custom hooks
-│   │   │   │   └── utils/            # Utilities
-│   │   │   ├── stores/               # Zustand stores
-│   │   │   ├── api/                  # API client
-│   │   │   ├── App.tsx
-│   │   │   └── main.tsx
-│   │   ├── public/
-│   │   ├── vite.config.ts
-│   │   ├── tsconfig.json
-│   │   └── package.json
-│   │
-│   ├── mobile/                       # React Native app
-│   │   ├── src/
-│   │   │   ├── features/             # Same as web
-│   │   │   ├── shared/
-│   │   │   │   ├── components/
-│   │   │   │   ├── hooks/
-│   │   │   │   └── navigation/       # React Navigation
-│   │   │   ├── stores/
-│   │   │   ├── api/
-│   │   │   ├── App.tsx
-│   │   │   └── index.ts
-│   │   ├── android/
-│   │   ├── ios/
-│   │   ├── app.json
 │   │   ├── tsconfig.json
 │   │   └── package.json
 │   │
@@ -493,12 +482,22 @@ edu-bridge/
 │       ├── tsconfig.json
 │       └── package.json
 │
-├── docker/
-│   ├── docker-compose.yml            # Production setup
-│   ├── docker-compose.dev.yml        # Development overrides
-│   ├── api.Dockerfile
-│   ├── web.Dockerfile
-│   └── nginx.conf
+├── infra/                            # Infrastructure configuration
+│   ├── docker/
+│   │   ├── docker-compose.yml        # Production setup
+│   │   ├── docker-compose.dev.yml    # Development overrides
+│   │   ├── api.Dockerfile
+│   │   └── nginx.conf
+│   └── k8s/                          # Kubernetes configs (future)
+│
+├── claude/                           # Claude Code instructions
+│   ├── concept.md                    # Project concept
+│   ├── features.md                   # Feature requirements
+│   ├── technical.md                  # Technical specifications
+│   └── generated/                    # Generated documentation
+│       ├── architecture.md           # This file
+│       ├── board.md                  # Project board
+│       └── tickets/                  # Ticket breakdown
 │
 ├── .github/
 │   └── workflows/
@@ -508,7 +507,11 @@ edu-bridge/
 ├── .gitignore
 ├── package.json                      # Workspace root
 ├── tsconfig.json                     # Base TS config
+├── CLAUDE.md                         # Claude instructions entry point
 └── README.md
+
+**Note:** Web portal (React with Vite) will be added in the future as a separate directory
+(e.g., `edu-bridge-web/`) following the same feature structure as the mobile app.
 ```
 
 ---
@@ -807,8 +810,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs:ro
+      - ./infra/docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/docker/certs:/etc/nginx/certs:ro
       - web_dist:/usr/share/nginx/html:ro
     depends_on:
       - api
@@ -816,8 +819,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: docker/api.Dockerfile
+      context: ./edu-bridge-be
+      dockerfile: ../infra/docker/api.Dockerfile
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://edubridge:${DB_PASSWORD}@postgres:5432/edubridge
@@ -944,12 +947,14 @@ npm run db:setup                  # Setup database (Prisma migrate)
 npm run keycloak:setup            # Configure Keycloak realm (script)
 
 # Start development
-npm run dev                       # Start all services (api + web + mobile)
+npm run dev                       # Start all services (api + mobile)
 
 # Individual services
-npm run dev:api                   # API on localhost:3000
-npm run dev:web                   # Web on localhost:5173
-npm run dev:mobile                # Mobile with Expo
+cd edu-bridge-be && npm run dev   # API on localhost:3000
+cd edu-bridge-fe && npm start     # Mobile with Expo
+
+# Future: Web portal
+# cd edu-bridge-web && npm run dev  # Web on localhost:5173
 
 # Database
 npm run db:migrate                # Run migrations
