@@ -1,7 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useSchool } from "../contexts/SchoolContext";
+import NoSchoolFrame from "../components/NoSchoolFrame";
 
 const NewsPage: React.FC = () => {
+  const { schools } = useSchool();
+
+  // Show NoSchoolFrame if user has no schools
+  if (schools.length === 0) {
+    return (
+      <NoSchoolFrame
+        pageName="News Feed"
+        icon="📰"
+        message="Stay updated with the latest news, announcements, and events from your school. Once you're connected to a school, all important updates will appear here."
+      />
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>

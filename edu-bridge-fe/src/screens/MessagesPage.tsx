@@ -1,7 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useSchool } from "../contexts/SchoolContext";
+import NoSchoolFrame from "../components/NoSchoolFrame";
 
 const MessagesPage: React.FC = () => {
+  const { schools } = useSchool();
+
+  // Show NoSchoolFrame if user has no schools
+  if (schools.length === 0) {
+    return (
+      <NoSchoolFrame
+        pageName="Messages"
+        icon="💬"
+        message="Communicate directly with teachers, staff, and other parents. Once connected to your school, you'll be able to send and receive messages, share updates, and stay in touch with your child's education team."
+      />
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>

@@ -1,7 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useSchool } from "../contexts/SchoolContext";
+import NoSchoolFrame from "../components/NoSchoolFrame";
 
 const CalendarPage: React.FC = () => {
+  const { schools } = useSchool();
+
+  // Show NoSchoolFrame if user has no schools
+  if (schools.length === 0) {
+    return (
+      <NoSchoolFrame
+        pageName="Calendar"
+        icon="📅"
+        message="Keep track of important school events, parent-teacher conferences, holidays, and your child's activities. Once you're connected to a school, all scheduled events will appear in your personalized calendar."
+      />
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>

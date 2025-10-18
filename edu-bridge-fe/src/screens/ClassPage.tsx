@@ -1,7 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useSchool } from "../contexts/SchoolContext";
+import NoSchoolFrame from "../components/NoSchoolFrame";
 
 const ClassPage: React.FC = () => {
+  const { schools } = useSchool();
+
+  // Show NoSchoolFrame if user has no schools
+  if (schools.length === 0) {
+    return (
+      <NoSchoolFrame
+        pageName="Class"
+        icon="📚"
+        message="Access your child's class information, assignments, and communicate with teachers. Connect to your school to view class channels, homework, and participate in class discussions."
+      />
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
