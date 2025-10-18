@@ -11,7 +11,7 @@ const ClassPage: React.FC = () => {
     return (
       <NoSchoolFrame
         pageName="Class"
-        icon="📚"
+        iconName="book-open"
         message="Access your child's class information, assignments, and communicate with teachers. Connect to your school to view class channels, homework, and participate in class discussions."
       />
     );

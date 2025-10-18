@@ -11,7 +11,7 @@ const MessagesPage: React.FC = () => {
     return (
       <NoSchoolFrame
         pageName="Messages"
-        icon="💬"
+        iconName="message-circle"
         message="Communicate directly with teachers, staff, and other parents. Once connected to your school, you'll be able to send and receive messages, share updates, and stay in touch with your child's education team."
       />
     );

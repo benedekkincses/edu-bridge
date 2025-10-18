@@ -11,7 +11,7 @@ const NewsPage: React.FC = () => {
     return (
       <NoSchoolFrame
         pageName="News Feed"
-        icon="📰"
+        iconName="file-text"
         message="Stay updated with the latest news, announcements, and events from your school. Once you're connected to a school, all important updates will appear here."
       />
     );

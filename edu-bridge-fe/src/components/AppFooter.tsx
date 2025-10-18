@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 export type AppRoute = "News" | "Class" | "Messages" | "Calendar";
 
@@ -8,40 +9,47 @@ interface AppFooterProps {
   onNavigate: (route: AppRoute) => void;
 }
 
+type MenuItem = {
+  route: AppRoute;
+  iconName: keyof typeof Feather.glyphMap;
+  label: string;
+};
+
 const AppFooter: React.FC<AppFooterProps> = ({ currentRoute, onNavigate }) => {
-  const menuItems: { route: AppRoute; icon: string; label: string }[] = [
-    { route: "News", icon: "📰", label: "News" },
-    { route: "Class", icon: "🎓", label: "Class" },
-    { route: "Messages", icon: "💬", label: "Messages" },
-    { route: "Calendar", icon: "📅", label: "Calendar" },
+  const menuItems: MenuItem[] = [
+    { route: "News", iconName: "file-text", label: "News" },
+    { route: "Class", iconName: "book-open", label: "Class" },
+    { route: "Messages", iconName: "message-circle", label: "Messages" },
+    { route: "Calendar", iconName: "calendar", label: "Calendar" },
   ];
 
   return (
     <View style={styles.container}>
-      {menuItems.map((item) => (
-        <TouchableOpacity
-          key={item.route}
-          style={styles.menuItem}
-          onPress={() => onNavigate(item.route)}
-        >
-          <Text
-            style={[
-              styles.menuIcon,
-              currentRoute === item.route && styles.menuIconActive,
-            ]}
+      {menuItems.map((item) => {
+        const isActive = currentRoute === item.route;
+        return (
+          <TouchableOpacity
+            key={item.route}
+            style={styles.menuItem}
+            onPress={() => onNavigate(item.route)}
           >
-            {item.icon}
-          </Text>
-          <Text
-            style={[
-              styles.menuLabel,
-              currentRoute === item.route && styles.menuLabelActive,
-            ]}
-          >
-            {item.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Feather
+              name={item.iconName}
+              size={24}
+              color={isActive ? "#007AFF" : "#999"}
+              style={styles.menuIcon}
+            />
+            <Text
+              style={[
+                styles.menuLabel,
+                isActive && styles.menuLabelActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
@@ -63,12 +71,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   menuIcon: {
-    fontSize: 24,
     marginBottom: 4,
-    opacity: 0.5,
-  },
-  menuIconActive: {
-    opacity: 1,
   },
   menuLabel: {
     fontSize: 12,

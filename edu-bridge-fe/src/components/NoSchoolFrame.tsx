@@ -1,21 +1,22 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Feather } from "@expo/vector-icons";
 
 interface NoSchoolFrameProps {
   pageName: string;
   message: string;
-  icon?: string;
+  iconName?: keyof typeof Feather.glyphMap;
 }
 
 const NoSchoolFrame: React.FC<NoSchoolFrameProps> = ({
   pageName,
   message,
-  icon = "🏫",
+  iconName = "home",
 }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>{icon}</Text>
+        <Feather name={iconName} size={60} color="#666" />
       </View>
       <Text style={styles.title}>Not Connected to Any School</Text>
       <Text style={styles.subtitle}>{pageName}</Text>
@@ -57,9 +58,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
-  },
-  icon: {
-    fontSize: 60,
   },
   title: {
     fontSize: 24,

@@ -11,7 +11,7 @@ const CalendarPage: React.FC = () => {
     return (
       <NoSchoolFrame
         pageName="Calendar"
-        icon="📅"
+        iconName="calendar"
         message="Keep track of important school events, parent-teacher conferences, holidays, and your child's activities. Once you're connected to a school, all scheduled events will appear in your personalized calendar."
       />
     );

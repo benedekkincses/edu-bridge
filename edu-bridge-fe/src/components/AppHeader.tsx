@@ -8,6 +8,7 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useSchool } from "../contexts/SchoolContext";
 
@@ -53,12 +54,12 @@ const AppHeader: React.FC = () => {
         activeOpacity={showSchoolDropdown ? 0.6 : 1}
         disabled={!showSchoolDropdown}
       >
-        <Text style={styles.schoolIcon}>🎓</Text>
+        <Feather name="home" size={20} color="#007AFF" style={styles.schoolIcon} />
         <Text style={styles.schoolName}>
           {selectedSchool?.name || "No School"}
         </Text>
         {showSchoolDropdown && (
-          <Text style={styles.dropdownIcon}>▼</Text>
+          <Feather name="chevron-down" size={16} color="#007AFF" />
         )}
       </TouchableOpacity>
 
@@ -125,7 +126,7 @@ const AppHeader: React.FC = () => {
             <View style={styles.bottomSheetHeader}>
               <Text style={styles.bottomSheetTitle}>Select School</Text>
               <TouchableOpacity onPress={() => setShowSchoolSelector(false)}>
-                <Text style={styles.closeButton}>✕</Text>
+                <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.bottomSheetScroll}>
@@ -139,7 +140,7 @@ const AppHeader: React.FC = () => {
                   ]}
                   onPress={() => handleSchoolSelect(item)}
                 >
-                  <Text style={styles.schoolItemIcon}>🎓</Text>
+                  <Feather name="home" size={20} color="#666" />
                   <Text
                     style={[
                       styles.schoolItemText,
@@ -150,7 +151,7 @@ const AppHeader: React.FC = () => {
                     {item.name}
                   </Text>
                   {selectedSchool?.id === item.id && (
-                    <Text style={styles.checkmark}>✓</Text>
+                    <Feather name="check" size={20} color="#007AFF" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -180,15 +181,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   schoolIcon: {
-    fontSize: 20,
+    marginRight: 4,
   },
   schoolName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#007AFF",
-  },
-  dropdownIcon: {
-    fontSize: 10,
     color: "#007AFF",
   },
   profileIcon: {
@@ -274,10 +271,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
-  closeButton: {
-    fontSize: 24,
-    color: "#666",
-  },
   bottomSheetScroll: {
     maxHeight: "100%",
   },
@@ -292,9 +285,6 @@ const styles = StyleSheet.create({
   schoolItemSelected: {
     backgroundColor: "#E8F4FF",
   },
-  schoolItemIcon: {
-    fontSize: 20,
-  },
   schoolItemText: {
     fontSize: 16,
     color: "#333",
@@ -303,10 +293,6 @@ const styles = StyleSheet.create({
   schoolItemTextSelected: {
     color: "#007AFF",
     fontWeight: "600",
-  },
-  checkmark: {
-    fontSize: 20,
-    color: "#007AFF",
   },
 });
 
