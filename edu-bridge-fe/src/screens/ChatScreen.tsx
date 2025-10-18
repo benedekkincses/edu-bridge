@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -25,10 +26,22 @@ const ChatScreen: React.FC = () => {
   const [messageText, setMessageText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
+  const pollingRef = useRef<boolean>(false);
+  const lastMessageTimeRef = useRef<Date>(new Date());
 
   useEffect(() => {
     fetchMessages();
+    // Start long polling
+    pollingRef.current = true;
+    startLongPolling();
+
+    return () => {
+      // Stop polling when component unmounts
+      pollingRef.current = false;
+    };
   }, [threadId]);
 
   const fetchMessages = async () => {
@@ -37,10 +50,17 @@ const ChatScreen: React.FC = () => {
       const response = await apiService.getThreadMessages(threadId);
       if (response.success) {
         setMessages(response.data.messages);
+        if (response.data.messages.length > 0) {
+          const lastMsg = response.data.messages[response.data.messages.length - 1];
+          lastMessageTimeRef.current = new Date(lastMsg.createdAt);
+        }
         // Scroll to bottom after loading messages
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: false });
         }, 100);
+
+        // Mark messages as read
+        markMessagesAsRead(response.data.messages);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -49,18 +69,116 @@ const ChatScreen: React.FC = () => {
     }
   };
 
+  const startLongPolling = async () => {
+    while (pollingRef.current) {
+      try {
+        const response = await apiService.pollNewMessages(
+          threadId,
+          lastMessageTimeRef.current,
+          30000 // 30 second timeout
+        );
+
+        if (response.success && response.data.messages.length > 0) {
+          const newMessages = response.data.messages;
+
+          // Filter out messages that already exist in the state
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNewMessages = newMessages.filter(msg => !existingIds.has(msg.id));
+
+            if (uniqueNewMessages.length === 0) {
+              return prev;
+            }
+
+            return [...prev, ...uniqueNewMessages];
+          });
+
+          // Update last message time
+          const lastMsg = newMessages[newMessages.length - 1];
+          lastMessageTimeRef.current = new Date(lastMsg.createdAt);
+
+          // Scroll to bottom
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+
+          // Mark new messages as read
+          markMessagesAsRead(newMessages);
+        }
+      } catch (error) {
+        // Silently handle polling errors to avoid spam
+        console.log("Polling error (will retry):", error);
+      }
+
+      // Small delay before next poll
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
+
+  const markMessagesAsRead = async (messagesToMark: Message[]) => {
+    // Mark all messages not sent by current user as read
+    const unreadMessages = messagesToMark.filter(
+      (msg) => msg.senderId !== user?.id && !msg.message_read_status?.some((rs) => rs.userId === user?.id)
+    );
+
+    for (const message of unreadMessages) {
+      try {
+        await apiService.markMessageAsRead(message.id);
+      } catch (error) {
+        console.error("Error marking message as read:", error);
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!messageText.trim() || isSending) return;
 
     const textToSend = messageText.trim();
+    const parentId = replyingTo?.id;
+
     setMessageText("");
+    setReplyingTo(null);
 
     try {
       setIsSending(true);
-      const response = await apiService.sendMessage(threadId, textToSend);
+      const response = await apiService.sendMessage(threadId, textToSend, parentId);
       if (response.success) {
-        // Add the new message to the list
-        setMessages((prev) => [...prev, response.data.message]);
+        // If it's a reply, update the parent message's replies
+        if (parentId) {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id === parentId) {
+                // Check if reply already exists
+                const replyExists = msg.replies?.some(r => r.id === response.data.message.id);
+                if (replyExists) {
+                  return msg;
+                }
+
+                return {
+                  ...msg,
+                  replies: [...(msg.replies || []), response.data.message],
+                  _count: {
+                    replies: (msg._count?.replies || 0) + 1,
+                  },
+                };
+              }
+              return msg;
+            })
+          );
+        } else {
+          // Add the new message to the list only if it doesn't exist
+          setMessages((prev) => {
+            const exists = prev.some(m => m.id === response.data.message.id);
+            if (exists) {
+              return prev;
+            }
+            return [...prev, response.data.message];
+          });
+        }
+
+        // Update last message time
+        lastMessageTimeRef.current = new Date(response.data.message.createdAt);
+
         // Scroll to bottom
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
@@ -70,9 +188,25 @@ const ChatScreen: React.FC = () => {
       console.error("Error sending message:", error);
       // Restore the message text if sending failed
       setMessageText(textToSend);
+      if (parentId) {
+        const parentMessage = messages.find((m) => m.id === parentId);
+        if (parentMessage) setReplyingTo(parentMessage);
+      }
     } finally {
       setIsSending(false);
     }
+  };
+
+  const toggleThreadExpanded = (messageId: string) => {
+    setExpandedThreads((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
   };
 
   const formatMessageTime = (dateString: string) => {
@@ -80,8 +214,61 @@ const ChatScreen: React.FC = () => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  const getMessageStatusIcon = (message: Message) => {
+    if (message.senderId !== user?.id) return null;
+
+    if (message.status === "SEEN") {
+      return <Feather name="check-circle" size={14} color="rgba(255, 255, 255, 0.9)" />;
+    } else {
+      return <Feather name="check" size={14} color="rgba(255, 255, 255, 0.7)" />;
+    }
+  };
+
+  const renderReply = (reply: Message, isMyMessage: boolean) => {
+    return (
+      <View
+        key={reply.id}
+        style={[
+          styles.replyBubble,
+          isMyMessage ? styles.myReplyBubble : styles.theirReplyBubble,
+        ]}
+      >
+        <Text
+          style={[
+            styles.replyText,
+            isMyMessage ? styles.myMessageText : styles.theirMessageText,
+          ]}
+        >
+          {reply.content}
+        </Text>
+        <View style={styles.replyFooter}>
+          <Text
+            style={[
+              styles.replyTime,
+              isMyMessage ? styles.myMessageTime : styles.theirMessageTime,
+            ]}
+          >
+            {formatMessageTime(reply.createdAt)}
+          </Text>
+          {isMyMessage && <View style={styles.statusIcon}>{getMessageStatusIcon(reply)}</View>}
+        </View>
+      </View>
+    );
+  };
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isMyMessage = item.senderId === user?.id;
+    const hasReplies = (item._count?.replies || 0) > 0;
+    const isExpanded = expandedThreads.has(item.id);
+
+    // Debug logging
+    console.log('Message:', {
+      id: item.id,
+      senderId: item.senderId,
+      userId: user?.id,
+      isMyMessage,
+      content: item.content.substring(0, 20)
+    });
 
     return (
       <View
@@ -90,29 +277,83 @@ const ChatScreen: React.FC = () => {
           isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
         ]}
       >
-        <View
-          style={[
-            styles.messageBubble,
-            isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
-          ]}
+        <TouchableOpacity
+          onLongPress={() => setReplyingTo(item)}
+          activeOpacity={0.8}
         >
-          <Text
+          <View
             style={[
-              styles.messageText,
-              isMyMessage ? styles.myMessageText : styles.theirMessageText,
+              styles.messageBubble,
+              isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
             ]}
           >
-            {item.content}
-          </Text>
-          <Text
-            style={[
-              styles.messageTime,
-              isMyMessage ? styles.myMessageTime : styles.theirMessageTime,
-            ]}
-          >
-            {formatMessageTime(item.createdAt)}
-          </Text>
+            <Text
+              style={[
+                styles.messageText,
+                isMyMessage ? styles.myMessageText : styles.theirMessageText,
+              ]}
+            >
+              {item.content}
+            </Text>
+            <View style={styles.messageFooter}>
+              <Text
+                style={[
+                  styles.messageTime,
+                  isMyMessage ? styles.myMessageTime : styles.theirMessageTime,
+                ]}
+              >
+                {formatMessageTime(item.createdAt)}
+              </Text>
+              {isMyMessage && <View style={styles.statusIcon}>{getMessageStatusIcon(item)}</View>}
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Thread replies */}
+        {hasReplies && (
+          <View style={styles.threadContainer}>
+            <TouchableOpacity
+              style={styles.threadButton}
+              onPress={() => toggleThreadExpanded(item.id)}
+            >
+              <Feather
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#666"
+              />
+              <Text style={styles.threadButtonText}>
+                {item._count?.replies} {item._count?.replies === 1 ? "reply" : "replies"}
+              </Text>
+            </TouchableOpacity>
+
+            {isExpanded && (
+              <View style={styles.repliesContainer}>
+                {item.replies?.map((reply) => renderReply(reply, reply.senderId === user?.id))}
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderReplyingToBar = () => {
+    if (!replyingTo) return null;
+
+    return (
+      <View style={styles.replyingToBar}>
+        <View style={styles.replyingToContent}>
+          <Feather name="corner-up-left" size={16} color="#666" />
+          <View style={styles.replyingToText}>
+            <Text style={styles.replyingToLabel}>Replying to</Text>
+            <Text style={styles.replyingToMessage} numberOfLines={1}>
+              {replyingTo.content}
+            </Text>
+          </View>
         </View>
+        <TouchableOpacity onPress={() => setReplyingTo(null)}>
+          <Feather name="x" size={20} color="#666" />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -127,64 +368,67 @@ const ChatScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color="#003366" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{participantName}</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color="#003366" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>{participantName}</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Messages List */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#003366" />
+        {/* Messages List */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#003366" />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.messagesList}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Feather name="message-circle" size={60} color="#ccc" />
+                <Text style={styles.emptyText}>No messages yet</Text>
+                <Text style={styles.emptySubtext}>
+                  Start the conversation by sending a message
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* Replying To Bar */}
+        {renderReplyingToBar()}
+
+        {/* Input Area */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            value={messageText}
+            onChangeText={setMessageText}
+            multiline
+            maxLength={1000}
+            placeholderTextColor="#999"
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!messageText.trim() || isSending) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSendMessage}
+            disabled={!messageText.trim() || isSending}
+          >
+            {isSending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Feather name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
         </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          contentContainerStyle={styles.messagesList}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Feather name="message-circle" size={60} color="#ccc" />
-              <Text style={styles.emptyText}>No messages yet</Text>
-              <Text style={styles.emptySubtext}>
-                Start the conversation by sending a message
-              </Text>
-            </View>
-          }
-        />
-      )}
-
-      {/* Input Area */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          value={messageText}
-          onChangeText={setMessageText}
-          multiline
-          maxLength={1000}
-          placeholderTextColor="#999"
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!messageText.trim() || isSending) && styles.sendButtonDisabled,
-          ]}
-          onPress={handleSendMessage}
-          disabled={!messageText.trim() || isSending}
-        >
-          {isSending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Feather name="send" size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -288,16 +532,99 @@ const styles = StyleSheet.create({
   theirMessageText: {
     color: "#333",
   },
+  messageFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 6,
+  },
   messageTime: {
     fontSize: 11,
-    marginTop: 4,
   },
   myMessageTime: {
     color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "right",
   },
   theirMessageTime: {
     color: "#999",
+  },
+  statusIcon: {
+    marginLeft: 4,
+  },
+  threadContainer: {
+    marginTop: 8,
+    marginLeft: 12,
+  },
+  threadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 4,
+  },
+  threadButtonText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+  repliesContainer: {
+    marginTop: 8,
+    gap: 8,
+  },
+  replyBubble: {
+    maxWidth: "90%",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderLeftWidth: 3,
+  },
+  myReplyBubble: {
+    backgroundColor: "#004080",
+    borderLeftColor: "#0066cc",
+  },
+  theirReplyBubble: {
+    backgroundColor: "#f5f5f5",
+    borderLeftColor: "#ccc",
+  },
+  replyText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  replyFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 6,
+  },
+  replyTime: {
+    fontSize: 10,
+  },
+  replyingToBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+  },
+  replyingToContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  replyingToText: {
+    flex: 1,
+  },
+  replyingToLabel: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+  },
+  replyingToMessage: {
+    fontSize: 14,
+    color: "#333",
+    marginTop: 2,
   },
   inputContainer: {
     flexDirection: "row",

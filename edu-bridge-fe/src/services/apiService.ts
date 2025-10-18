@@ -187,15 +187,29 @@ export interface ThreadsResponse {
   };
 }
 
+export interface MessageReadStatus {
+  id: string;
+  messageId: string;
+  userId: string;
+  readAt: string;
+}
+
 export interface Message {
   id: string;
   threadId: string;
   senderId: string;
   content: string;
   attachments: any[];
+  parentMessageId?: string | null;
+  status: "SENT" | "SEEN";
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  message_read_status?: MessageReadStatus[];
+  replies?: Message[];
+  _count?: {
+    replies: number;
+  };
 }
 
 export interface MessagesResponse {
@@ -354,11 +368,13 @@ export const apiService = {
 
   async sendMessage(
     threadId: string,
-    content: string
+    content: string,
+    parentMessageId?: string
   ): Promise<SendMessageResponse> {
     try {
       const response = await apiClient.post(`/api/threads/${threadId}/messages`, {
         content,
+        parentMessageId,
       });
       return response.data;
     } catch (error) {
@@ -372,6 +388,60 @@ export const apiService = {
       const response = await apiClient.post(`/api/messages/${messageId}/read`);
       return response.data;
     } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async createOrGetGroupThread(groupId: string): Promise<CreateThreadResponse> {
+    try {
+      const response = await apiClient.post(`/api/groups/${groupId}/thread`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async createOrGetClassThread(classId: string): Promise<CreateThreadResponse> {
+    try {
+      const response = await apiClient.post(`/api/classes/${classId}/thread`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async pollNewMessages(
+    threadId: string,
+    since: Date,
+    timeout?: number
+  ): Promise<MessagesResponse> {
+    try {
+      const params = new URLSearchParams();
+      params.append("since", since.toISOString());
+      if (timeout) params.append("timeout", timeout.toString());
+
+      const response = await apiClient.get(
+        `/api/threads/${threadId}/poll?${params.toString()}`,
+        {
+          // Override the default timeout for long polling (add 5s buffer)
+          timeout: (timeout || 30000) + 5000,
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      // Timeout is expected for long polling, return empty messages
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        return {
+          success: true,
+          data: {
+            messages: [],
+            count: 0,
+          },
+        };
+      }
       console.error("API Error:", error);
       throw error;
     }

@@ -83,6 +83,7 @@ model classes {
   events                  events[]
   groups                  groups[]
   news_posts              news_posts[]
+  threads                 threads?
 }
 
 model event_rsvps {
@@ -162,13 +163,18 @@ model messages {
   senderId            String                // Keycloak user ID
   content             String
   attachments         Json[]                @default([])
+  parentMessageId     String?               // For thread replies
+  status              MessageStatus         @default(SENT)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime
   deletedAt           DateTime?
   message_read_status message_read_status[]
   threads             threads               @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parentMessage       messages?             @relation("MessageReplies", fields: [parentMessageId], references: [id], onDelete: Cascade)
+  replies             messages[]            @relation("MessageReplies")
 
   @@index([threadId, createdAt])
+  @@index([parentMessageId])
 }
 
 model news_post_read_status {
@@ -242,11 +248,13 @@ model threads {
   id                  String                @id
   type                ThreadType
   groupId             String?               @unique
+  classId             String?               @unique
   createdAt           DateTime              @default(now())
   updatedAt           DateTime
   messages            messages[]
   thread_participants thread_participants[]
   groups              groups?               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  classes             classes?              @relation(fields: [classId], references: [id], onDelete: Cascade)
 }
 
 model users {
@@ -329,6 +337,12 @@ enum RSVPStatus {
 enum ThreadType {
   direct
   group
+  class_channel
+}
+
+enum MessageStatus {
+  SENT
+  SEEN
 }
 
 enum UserRole {
