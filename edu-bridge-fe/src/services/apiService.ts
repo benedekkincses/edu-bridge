@@ -108,6 +108,23 @@ export interface AuthVerifyResponse {
   };
 }
 
+export interface School {
+  id: string;
+  name: string;
+  address: string | null;
+  logo: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchoolsResponse {
+  success: boolean;
+  data: {
+    schools: School[];
+    count: number;
+  };
+}
+
 export const apiService = {
   async getHello(): Promise<HelloResponse> {
     try {
@@ -172,6 +189,16 @@ export const apiService = {
   async getRoot(): Promise<any> {
     try {
       const response = await apiClient.get("/");
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getSchools(): Promise<SchoolsResponse> {
+    try {
+      const response = await apiClient.get("/api/schools");
       return response.data;
     } catch (error) {
       console.error("API Error:", error);

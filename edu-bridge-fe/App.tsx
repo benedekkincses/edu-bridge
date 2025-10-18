@@ -3,16 +3,24 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { SchoolProvider, useSchool } from "./src/contexts/SchoolContext";
 import MainLayout from "./src/components/MainLayout";
 import LoginScreen from "./src/screens/LoginScreen";
+import SchoolSelectorScreen from "./src/screens/SchoolSelectorScreen";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 
 const Stack = createStackNavigator();
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const {
+    schools,
+    selectedSchool,
+    isLoadingSchools,
+    selectSchool,
+  } = useSchool();
 
-  if (isLoading) {
+  if (isAuthLoading || (isAuthenticated && isLoadingSchools)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -24,25 +32,31 @@ const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <StatusBar style="auto" />
-      <Stack.Navigator>
-        {isAuthenticated ? (
-          // Authenticated screens - Use MainLayout
-          <Stack.Screen
-            name="Main"
-            component={MainLayout}
-            options={{
-              headerShown: false,
-            }}
-          />
-        ) : (
-          // Unauthenticated screens
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
           <Stack.Screen
             name="Login"
             component={LoginScreen}
-            options={{
-              title: "Login",
-              headerShown: false,
-            }}
+            options={{ title: "Login" }}
+          />
+        ) : schools.length > 1 && !selectedSchool ? (
+          <Stack.Screen
+            name="SchoolSelector"
+            options={{ title: "Select School" }}
+          >
+            {() => (
+              <SchoolSelectorScreen
+                schools={schools}
+                isLoading={isLoadingSchools}
+                onSelectSchool={selectSchool}
+              />
+            )}
+          </Stack.Screen>
+        ) : (
+          <Stack.Screen
+            name="Main"
+            component={MainLayout}
+            options={{ title: "Main" }}
           />
         )}
       </Stack.Navigator>
@@ -53,7 +67,9 @@ const AppNavigator: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <SchoolProvider>
+        <AppNavigator />
+      </SchoolProvider>
     </AuthProvider>
   );
 }

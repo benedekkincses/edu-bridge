@@ -9,20 +9,13 @@ import {
   Animated,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
-
-interface School {
-  id: string;
-  name: string;
-}
+import { useSchool } from "../contexts/SchoolContext";
 
 const AppHeader: React.FC = () => {
   const { user, logout } = useAuth();
+  const { schools, selectedSchool, selectSchool } = useSchool();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSchoolSelector, setShowSchoolSelector] = useState(false);
-  const [selectedSchool, setSelectedSchool] = useState<School>({
-    id: "1",
-    name: "St. Peter's School",
-  });
   const slideAnim = useRef(new Animated.Value(1000)).current;
 
   useEffect(() => {
@@ -38,28 +31,8 @@ const AppHeader: React.FC = () => {
     }
   }, [showSchoolSelector]);
 
-  // Mock schools data
-  const schools: School[] = [
-    { id: "1", name: "St. Peter's School" },
-    { id: "2", name: "St. Anderson's" },
-    { id: "3", name: "Lincoln High School" },
-    { id: "4", name: "Washington Elementary" },
-    { id: "5", name: "Roosevelt Middle School" },
-    { id: "6", name: "Jefferson Academy" },
-    { id: "7", name: "Madison Preparatory" },
-    { id: "8", name: "Kennedy High School" },
-  ];
-
-  // Calculate if we need scrolling (more than 6 items)
-  const ITEM_HEIGHT = 60; // approximate height of each item
-  const MAX_VISIBLE_ITEMS = 6;
-  const needsScroll = schools.length > MAX_VISIBLE_ITEMS;
-  const dropdownHeight = needsScroll
-    ? ITEM_HEIGHT * MAX_VISIBLE_ITEMS
-    : undefined;
-
-  const handleSchoolSelect = (school: School) => {
-    setSelectedSchool(school);
+  const handleSchoolSelect = (school: any) => {
+    selectSchool(school);
     setShowSchoolSelector(false);
   };
 
@@ -68,17 +41,25 @@ const AppHeader: React.FC = () => {
     logout();
   };
 
+  // Only show school selector dropdown if there are multiple schools
+  const showSchoolDropdown = schools.length > 1;
+
   return (
     <View style={styles.container}>
       {/* School Selector */}
       <TouchableOpacity
         style={styles.schoolSelector}
-        onPress={() => setShowSchoolSelector(true)}
-        activeOpacity={1}
+        onPress={() => showSchoolDropdown && setShowSchoolSelector(true)}
+        activeOpacity={showSchoolDropdown ? 0.6 : 1}
+        disabled={!showSchoolDropdown}
       >
         <Text style={styles.schoolIcon}>🎓</Text>
-        <Text style={styles.schoolName}>{selectedSchool.name}</Text>
-        <Text style={styles.dropdownIcon}>▼</Text>
+        <Text style={styles.schoolName}>
+          {selectedSchool?.name || "No School"}
+        </Text>
+        {showSchoolDropdown && (
+          <Text style={styles.dropdownIcon}>▼</Text>
+        )}
       </TouchableOpacity>
 
       {/* Profile Icon */}
@@ -153,7 +134,7 @@ const AppHeader: React.FC = () => {
                   key={item.id}
                   style={[
                     styles.schoolItem,
-                    selectedSchool.id === item.id &&
+                    selectedSchool?.id === item.id &&
                       styles.schoolItemSelected,
                   ]}
                   onPress={() => handleSchoolSelect(item)}
@@ -162,13 +143,13 @@ const AppHeader: React.FC = () => {
                   <Text
                     style={[
                       styles.schoolItemText,
-                      selectedSchool.id === item.id &&
+                      selectedSchool?.id === item.id &&
                         styles.schoolItemTextSelected,
                     ]}
                   >
                     {item.name}
                   </Text>
-                  {selectedSchool.id === item.id && (
+                  {selectedSchool?.id === item.id && (
                     <Text style={styles.checkmark}>✓</Text>
                   )}
                 </TouchableOpacity>
