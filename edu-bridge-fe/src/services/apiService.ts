@@ -207,6 +207,12 @@ export interface MessageReadStatus {
   readAt: string;
 }
 
+export interface MessageSender {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
 export interface Message {
   id: string;
   threadId: string;
@@ -219,6 +225,7 @@ export interface Message {
   updatedAt: string;
   deletedAt: string | null;
   message_read_status?: MessageReadStatus[];
+  sender?: MessageSender;
   replies?: Message[];
   _count?: {
     replies: number;

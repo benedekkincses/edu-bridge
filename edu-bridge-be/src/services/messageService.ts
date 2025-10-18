@@ -324,6 +324,13 @@ export const messageService = {
       skip: offset,
       include: {
         message_read_status: true,
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         replies: {
           where: {
             deletedAt: null,
@@ -333,6 +340,13 @@ export const messageService = {
           },
           include: {
             message_read_status: true,
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         _count: {
@@ -400,6 +414,13 @@ export const messageService = {
       },
       include: {
         message_read_status: true,
+        sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
         replies: true,
         _count: {
           select: {
@@ -613,6 +634,13 @@ export const messageService = {
         },
         include: {
           message_read_status: true,
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
           replies: {
             where: {
               deletedAt: null,
@@ -622,6 +650,13 @@ export const messageService = {
             },
             include: {
               message_read_status: true,
+              sender: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
           },
           _count: {

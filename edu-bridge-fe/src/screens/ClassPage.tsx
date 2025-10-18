@@ -261,8 +261,27 @@ const ClassPage: React.FC = () => {
     );
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isMyMessage = item.senderId === user?.id;
+    const senderName = item.sender
+      ? `${item.sender.firstName || ""} ${item.sender.lastName || ""}`.trim()
+      : "Unknown User";
+
+    // Check if we should show the sender name
+    // Show if: it's not my message AND (it's the first message OR sender changed OR more than 1 minute since last message)
+    let showSenderName = !isMyMessage;
+
+    if (!isMyMessage && index > 0) {
+      const prevMessage = messages[index - 1];
+      const isSameSender = prevMessage.senderId === item.senderId;
+      const timeDiff = new Date(item.createdAt).getTime() - new Date(prevMessage.createdAt).getTime();
+      const isWithinOneMinute = timeDiff < 60000; // 60000ms = 1 minute
+
+      // Don't show sender name if same sender and within 1 minute
+      if (isSameSender && isWithinOneMinute) {
+        showSenderName = false;
+      }
+    }
 
     return (
       <View
@@ -271,6 +290,9 @@ const ClassPage: React.FC = () => {
           isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
         ]}
       >
+        {showSenderName && (
+          <Text style={styles.senderName}>{senderName}</Text>
+        )}
         <View
           style={[
             styles.messageBubble,
@@ -673,6 +695,13 @@ const styles = StyleSheet.create({
   },
   theirMessageContainer: {
     alignItems: "flex-start",
+  },
+  senderName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 4,
+    marginLeft: 12,
   },
   messageBubble: {
     maxWidth: "75%",

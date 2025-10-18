@@ -169,12 +169,14 @@ model messages {
   updatedAt           DateTime
   deletedAt           DateTime?
   message_read_status message_read_status[]
+  sender              users                 @relation(fields: [senderId], references: [id], onDelete: Cascade)
   threads             threads               @relation(fields: [threadId], references: [id], onDelete: Cascade)
   parentMessage       messages?             @relation("MessageReplies", fields: [parentMessageId], references: [id], onDelete: Cascade)
   replies             messages[]            @relation("MessageReplies")
 
   @@index([threadId, createdAt])
   @@index([parentMessageId])
+  @@index([senderId])
 }
 
 model news_post_read_status {
@@ -258,14 +260,15 @@ model threads {
 }
 
 model users {
-  id        String    @id // Keycloak user ID
+  id        String     @id // Keycloak user ID
   username  String?
   firstName String?
   lastName  String?
-  email     String?   @unique
+  email     String?    @unique
   phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  messages  messages[]
 
   @@index([email])
 }
