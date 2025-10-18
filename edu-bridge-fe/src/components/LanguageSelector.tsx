@@ -44,7 +44,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ style }) => {
       <Modal
         visible={showModal}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowModal(false)}
       >
         <TouchableOpacity
@@ -59,12 +59,13 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ style }) => {
                 <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-            {languages.map((lang) => (
+            {languages.map((lang, index, array) => (
               <TouchableOpacity
                 key={lang.code}
                 style={[
                   styles.languageOption,
                   language === lang.code && styles.languageOptionSelected,
+                  index === array.length - 1 && styles.languageOptionLast,
                 ]}
                 onPress={() => handleLanguageSelect(lang.code)}
               >
@@ -157,6 +158,11 @@ const styles = StyleSheet.create({
   languageOptionTextSelected: {
     color: "#003366",
     fontWeight: "600",
+  },
+  languageOptionLast: {
+    borderBottomWidth: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
 });
 

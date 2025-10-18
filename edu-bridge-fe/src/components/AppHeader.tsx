@@ -82,7 +82,7 @@ const AppHeader: React.FC = () => {
       <Modal
         visible={showProfileMenu}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowProfileMenu(false)}
       >
         <TouchableOpacity
@@ -111,7 +111,7 @@ const AppHeader: React.FC = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.profileMenuItem}
+              style={[styles.profileMenuItem, styles.profileMenuItemLast]}
               onPress={handleLogout}
             >
               <Feather name="log-out" size={20} color="#FF3B30" style={styles.profileMenuIcon} />
@@ -184,7 +184,7 @@ const AppHeader: React.FC = () => {
         <Modal
           visible={showLanguageSelector}
           transparent
-          animationType="fade"
+          animationType="none"
           onRequestClose={() => setShowLanguageSelector(false)}
         >
           <TouchableOpacity
@@ -202,12 +202,13 @@ const AppHeader: React.FC = () => {
               {[
                 { code: "en" as Language, name: t("languages.en") },
                 { code: "hu" as Language, name: t("languages.hu") },
-              ].map((lang) => (
+              ].map((lang, index, array) => (
                 <TouchableOpacity
                   key={lang.code}
                   style={[
                     styles.languageOption,
                     language === lang.code && styles.languageOptionSelected,
+                    index === array.length - 1 && styles.languageOptionLast,
                   ]}
                   onPress={async () => {
                     await setLanguage(lang.code);
@@ -332,6 +333,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
+  profileMenuItemLast: {
+    borderBottomWidth: 0,
+  },
   bottomSheetOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -426,6 +430,11 @@ const styles = StyleSheet.create({
   languageOptionTextSelected: {
     color: "#003366",
     fontWeight: "600",
+  },
+  languageOptionLast: {
+    borderBottomWidth: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
 });
 
