@@ -2,17 +2,19 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSchool } from "../contexts/SchoolContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 const MessagesPage: React.FC = () => {
   const { schools } = useSchool();
+  const { t } = useLocalization();
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName="Messages"
+        pageName={t("messages")}
         iconName="message-circle"
-        message="Communicate directly with teachers, staff, and other parents. Once connected to your school, you'll be able to send and receive messages, share updates, and stay in touch with your child's education team."
+        message={t("noSchool.messagesMessage")}
       />
     );
   }
@@ -20,36 +22,32 @@ const MessagesPage: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Direct Messages</Text>
+        <Text style={styles.title}>{t("messages.title")}</Text>
         <Text style={styles.subtitle}>
-          This is the Messages page - Coming soon!
+          {t("messages.subtitle")}
         </Text>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>AI Chat Assistant</Text>
+          <Text style={styles.cardTitle}>{t("messages.aiChatTitle")}</Text>
           <Text style={styles.cardContent}>
-            Chat with Almee for instant answers and support. Get quick
-            responses to common questions.
+            {t("messages.aiChatContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Teacher Conversations</Text>
+          <Text style={styles.cardTitle}>{t("messages.teacherConversationsTitle")}</Text>
           <Text style={styles.cardContent}>
-            Direct messaging with teachers like Mr. Smith (Math), Ms. Davis
-            (Science), and other faculty members.
+            {t("messages.teacherConversationsContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Parent Network</Text>
+          <Text style={styles.cardTitle}>{t("messages.parentNetworkTitle")}</Text>
           <Text style={styles.cardContent}>
-            Connect with other parents like Jane Doe for project updates and
-            school-related discussions.
+            {t("messages.parentNetworkContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>School Administration</Text>
+          <Text style={styles.cardTitle}>{t("messages.schoolAdministrationTitle")}</Text>
           <Text style={styles.cardContent}>
-            Messages from Principal Thompson and other school administrators
-            with important documents and announcements.
+            {t("messages.schoolAdministrationContent")}
           </Text>
         </View>
       </View>

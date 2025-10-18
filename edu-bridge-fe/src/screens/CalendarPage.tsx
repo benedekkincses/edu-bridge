@@ -2,17 +2,19 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSchool } from "../contexts/SchoolContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 const CalendarPage: React.FC = () => {
   const { schools } = useSchool();
+  const { t } = useLocalization();
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName="Calendar"
+        pageName={t("calendar")}
         iconName="calendar"
-        message="Keep track of important school events, parent-teacher conferences, holidays, and your child's activities. Once you're connected to a school, all scheduled events will appear in your personalized calendar."
+        message={t("noSchool.calendarMessage")}
       />
     );
   }
@@ -20,36 +22,32 @@ const CalendarPage: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Calendar</Text>
+        <Text style={styles.title}>{t("calendar.title")}</Text>
         <Text style={styles.subtitle}>
-          This is the Calendar page - Coming soon!
+          {t("calendar.subtitle")}
         </Text>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Calendar Views</Text>
+          <Text style={styles.cardTitle}>{t("calendar.calendarViewsTitle")}</Text>
           <Text style={styles.cardContent}>
-            Switch between Day, Week, and Month views to see school events and
-            schedules at different levels of detail.
+            {t("calendar.calendarViewsContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Event Management</Text>
+          <Text style={styles.cardTitle}>{t("calendar.eventManagementTitle")}</Text>
           <Text style={styles.cardContent}>
-            View all scheduled events, parent-teacher conferences, school
-            holidays, field trips, and important dates.
+            {t("calendar.eventManagementContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Add Events</Text>
+          <Text style={styles.cardTitle}>{t("calendar.addEventsTitle")}</Text>
           <Text style={styles.cardContent}>
-            Add personal reminders and mark important dates for your child's
-            school activities.
+            {t("calendar.addEventsContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Event Indicators</Text>
+          <Text style={styles.cardTitle}>{t("calendar.eventIndicatorsTitle")}</Text>
           <Text style={styles.cardContent}>
-            Different colored dots on calendar dates indicate various event
-            types (blue for regular events, red for important dates).
+            {t("calendar.eventIndicatorsContent")}
           </Text>
         </View>
       </View>

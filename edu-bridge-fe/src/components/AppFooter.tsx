@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 export type AppRoute = "News" | "Class" | "Messages" | "Calendar";
 
@@ -16,11 +17,13 @@ type MenuItem = {
 };
 
 const AppFooter: React.FC<AppFooterProps> = ({ currentRoute, onNavigate }) => {
+  const { t } = useLocalization();
+
   const menuItems: MenuItem[] = [
-    { route: "News", iconName: "file-text", label: "News" },
-    { route: "Class", iconName: "book-open", label: "Class" },
-    { route: "Messages", iconName: "message-circle", label: "Messages" },
-    { route: "Calendar", iconName: "calendar", label: "Calendar" },
+    { route: "News", iconName: "file-text", label: t("footer.news") },
+    { route: "Class", iconName: "book-open", label: t("footer.class") },
+    { route: "Messages", iconName: "message-circle", label: t("footer.messages") },
+    { route: "Calendar", iconName: "calendar", label: t("footer.calendar") },
   ];
 
   return (

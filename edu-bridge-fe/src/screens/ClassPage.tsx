@@ -2,17 +2,19 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSchool } from "../contexts/SchoolContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 const ClassPage: React.FC = () => {
   const { schools } = useSchool();
+  const { t } = useLocalization();
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName="Class"
+        pageName={t("class")}
         iconName="book-open"
-        message="Access your child's class information, assignments, and communicate with teachers. Connect to your school to view class channels, homework, and participate in class discussions."
+        message={t("noSchool.classMessage")}
       />
     );
   }
@@ -20,29 +22,26 @@ const ClassPage: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Class Page</Text>
+        <Text style={styles.title}>{t("class.title")}</Text>
         <Text style={styles.subtitle}>
-          This is the Class page - Coming soon!
+          {t("class.subtitle")}
         </Text>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Group Channels</Text>
+          <Text style={styles.cardTitle}>{t("class.groupChannelsTitle")}</Text>
           <Text style={styles.cardContent}>
-            This section will display various class channels like General,
-            Assignments, Exams, Extracurricular, and Parent-Teacher Meetings.
+            {t("class.groupChannelsContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Class Posts</Text>
+          <Text style={styles.cardTitle}>{t("class.classPostsTitle")}</Text>
           <Text style={styles.cardContent}>
-            Teachers can post announcements, homework reminders, and upcoming
-            school trips with attachments.
+            {t("class.classPostsContent")}
           </Text>
         </View>
         <View style={styles.testCard}>
-          <Text style={styles.cardTitle}>Channel Navigation</Text>
+          <Text style={styles.cardTitle}>{t("class.channelNavigationTitle")}</Text>
           <Text style={styles.cardContent}>
-            Parents can navigate between different channels to see specific
-            content relevant to each category.
+            {t("class.channelNavigationContent")}
           </Text>
         </View>
       </View>

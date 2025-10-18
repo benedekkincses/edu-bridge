@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 interface NoSchoolFrameProps {
   pageName: string;
@@ -13,26 +14,27 @@ const NoSchoolFrame: React.FC<NoSchoolFrameProps> = ({
   message,
   iconName = "home",
 }) => {
+  const { t } = useLocalization();
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.iconContainer}>
         <Feather name={iconName} size={60} color="#003366" />
       </View>
-      <Text style={styles.title}>Not Connected to Any School</Text>
+      <Text style={styles.title}>{t("noSchool.title")}</Text>
       <Text style={styles.subtitle}>{pageName}</Text>
       <View style={styles.messageContainer}>
         <Text style={styles.message}>{message}</Text>
       </View>
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>What's Next?</Text>
+        <Text style={styles.infoTitle}>{t("noSchool.whatsNext")}</Text>
         <Text style={styles.infoText}>
-          • Contact your school administrator to get added to your school
+          • {t("noSchool.step1")}
         </Text>
         <Text style={styles.infoText}>
-          • Once added, you'll be able to access all features
+          • {t("noSchool.step2")}
         </Text>
         <Text style={styles.infoText}>
-          • You'll receive notifications from teachers and school staff
+          • {t("noSchool.step3")}
         </Text>
       </View>
     </ScrollView>

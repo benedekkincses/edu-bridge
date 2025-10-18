@@ -12,12 +12,15 @@ import {
   ScrollView,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocalization } from "../contexts/LocalizationContext";
+import LanguageSelector from "../components/LanguageSelector";
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useLocalization();
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -30,11 +33,11 @@ const LoginScreen: React.FC = () => {
       const result = await login({ username: email.trim(), password });
 
       if (!result.success) {
-        Alert.alert("Login Failed", result.error || "Invalid credentials");
+        Alert.alert("Login Failed", result.error || t("login.loginError"));
       }
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Error", "An unexpected error occurred");
+      Alert.alert("Error", t("login.loginError"));
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +58,9 @@ const LoginScreen: React.FC = () => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
+          {/* Language Selector */}
+          <LanguageSelector style={styles.languageSelector} />
+
           {/* Logo/Icon */}
           <View style={styles.iconContainer}>
             <View style={styles.iconCircle}>
@@ -63,16 +69,16 @@ const LoginScreen: React.FC = () => {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Welcome Back, Parent</Text>
+          <Text style={styles.title}>{t("login.title")}</Text>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>{t("login.emailPlaceholder")}</Text>
             <TextInput
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="Enter your email address"
+              placeholder={t("login.emailPlaceholder")}
               placeholderTextColor="#999"
               autoCapitalize="none"
               autoCorrect={false}
@@ -83,12 +89,12 @@ const LoginScreen: React.FC = () => {
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t("login.passwordPlaceholder")}</Text>
             <TextInput
               style={styles.input}
               value={password}
               onChangeText={setPassword}
-              placeholder="Enter your password"
+              placeholder={t("login.passwordPlaceholder")}
               placeholderTextColor="#999"
               secureTextEntry
               autoCapitalize="none"
@@ -117,7 +123,7 @@ const LoginScreen: React.FC = () => {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.loginButtonText}>{t("login.loginButton")}</Text>
             )}
           </TouchableOpacity>
 
@@ -168,6 +174,9 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 500,
     alignSelf: "center",
+  },
+  languageSelector: {
+    marginBottom: 24,
   },
   iconContainer: {
     alignItems: "center",

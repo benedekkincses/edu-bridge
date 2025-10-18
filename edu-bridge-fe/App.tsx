@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { SchoolProvider, useSchool } from "./src/contexts/SchoolContext";
+import { LocalizationProvider } from "./src/contexts/LocalizationContext";
 import MainLayout from "./src/components/MainLayout";
 import LoginScreen from "./src/screens/LoginScreen";
 import SchoolSelectorScreen from "./src/screens/SchoolSelectorScreen";
@@ -75,11 +76,13 @@ const AppNavigator: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SchoolProvider>
-        <AppNavigator />
-      </SchoolProvider>
-    </AuthProvider>
+    <LocalizationProvider>
+      <AuthProvider>
+        <SchoolProvider>
+          <AppNavigator />
+        </SchoolProvider>
+      </AuthProvider>
+    </LocalizationProvider>
   );
 }
 

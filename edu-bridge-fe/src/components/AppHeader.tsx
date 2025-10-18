@@ -11,12 +11,16 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useSchool } from "../contexts/SchoolContext";
+import { useLocalization } from "../contexts/LocalizationContext";
+import { Language } from "../locales";
 
 const AppHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const { schools, selectedSchool, selectSchool } = useSchool();
+  const { language, setLanguage, t } = useLocalization();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSchoolSelector, setShowSchoolSelector] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const slideAnim = useRef(new Animated.Value(1000)).current;
 
   useEffect(() => {
@@ -56,7 +60,7 @@ const AppHeader: React.FC = () => {
       >
         <Feather name="home" size={20} color="#003366" style={styles.schoolIcon} />
         <Text style={styles.schoolName}>
-          {selectedSchool?.name || "No School"}
+          {selectedSchool?.name || t("common.noSchool")}
         </Text>
         {showSchoolDropdown && (
           <Feather name="chevron-down" size={16} color="#003366" />
@@ -95,9 +99,23 @@ const AppHeader: React.FC = () => {
             </View>
             <TouchableOpacity
               style={styles.profileMenuItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                setShowLanguageSelector(true);
+              }}
+            >
+              <Feather name="globe" size={20} color="#003366" style={styles.profileMenuIcon} />
+              <Text style={styles.profileMenuItemTextNormal}>{t("profile.language")}</Text>
+              <Text style={styles.profileMenuItemValue}>
+                {t(`languages.${language}`)}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
               onPress={handleLogout}
             >
-              <Text style={styles.profileMenuItemText}>Logout</Text>
+              <Feather name="log-out" size={20} color="#FF3B30" style={styles.profileMenuIcon} />
+              <Text style={styles.profileMenuItemText}>{t("common.logout")}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -124,7 +142,7 @@ const AppHeader: React.FC = () => {
               ]}
             >
             <View style={styles.bottomSheetHeader}>
-              <Text style={styles.bottomSheetTitle}>Select School</Text>
+              <Text style={styles.bottomSheetTitle}>{t("common.selectSchool")}</Text>
               <TouchableOpacity onPress={() => setShowSchoolSelector(false)}>
                 <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
@@ -158,6 +176,59 @@ const AppHeader: React.FC = () => {
             </ScrollView>
             </Animated.View>
           </View>
+        </Modal>
+      )}
+
+      {/* Language Selector Modal */}
+      {showLanguageSelector && (
+        <Modal
+          visible={showLanguageSelector}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLanguageSelector(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowLanguageSelector(false)}
+          >
+            <View style={styles.languageSelectorModal}>
+              <View style={styles.languageSelectorHeader}>
+                <Text style={styles.languageSelectorTitle}>{t("login.selectLanguage")}</Text>
+                <TouchableOpacity onPress={() => setShowLanguageSelector(false)}>
+                  <Feather name="x" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              {[
+                { code: "en" as Language, name: t("languages.en") },
+                { code: "hu" as Language, name: t("languages.hu") },
+              ].map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageOption,
+                    language === lang.code && styles.languageOptionSelected,
+                  ]}
+                  onPress={async () => {
+                    await setLanguage(lang.code);
+                    setShowLanguageSelector(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.languageOptionText,
+                      language === lang.code && styles.languageOptionTextSelected,
+                    ]}
+                  >
+                    {lang.name}
+                  </Text>
+                  {language === lang.code && (
+                    <Feather name="check" size={20} color="#003366" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
         </Modal>
       )}
     </View>
@@ -238,11 +309,28 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   profileMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  profileMenuIcon: {
+    marginRight: 12,
   },
   profileMenuItemText: {
     fontSize: 16,
     color: "#FF3B30",
+    flex: 1,
+  },
+  profileMenuItemTextNormal: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  profileMenuItemValue: {
+    fontSize: 14,
+    color: "#666",
   },
   bottomSheetOverlay: {
     flex: 1,
@@ -291,6 +379,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   schoolItemTextSelected: {
+    color: "#003366",
+    fontWeight: "600",
+  },
+  languageSelectorModal: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    minWidth: 300,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  languageSelectorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  languageSelectorTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  languageOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  languageOptionSelected: {
+    backgroundColor: "#E8F4FF",
+  },
+  languageOptionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  languageOptionTextSelected: {
     color: "#003366",
     fontWeight: "600",
   },

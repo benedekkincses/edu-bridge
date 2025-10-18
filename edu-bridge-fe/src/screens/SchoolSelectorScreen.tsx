@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { School } from "../services/apiService";
+import { useLocalization } from "../contexts/LocalizationContext";
 
 interface SchoolSelectorScreenProps {
   schools: School[];
@@ -20,11 +21,12 @@ const SchoolSelectorScreen: React.FC<SchoolSelectorScreenProps> = ({
   isLoading,
   onSelectSchool,
 }) => {
+  const { t } = useLocalization();
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#003366" />
-        <Text style={styles.loadingText}>Loading your schools...</Text>
+        <Text style={styles.loadingText}>{t("schoolSelector.loadingSchools")}</Text>
       </View>
     );
   }
@@ -32,9 +34,9 @@ const SchoolSelectorScreen: React.FC<SchoolSelectorScreenProps> = ({
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Select a School</Text>
+        <Text style={styles.title}>{t("schoolSelector.title")}</Text>
         <Text style={styles.subtitle}>
-          Choose which school you'd like to view
+          {t("schoolSelector.subtitle")}
         </Text>
 
         <View style={styles.schoolsContainer}>
