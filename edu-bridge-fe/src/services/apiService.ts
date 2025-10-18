@@ -4,6 +4,13 @@ import KeycloakService from "./keycloakService";
 // Use your computer's IP address for mobile devices
 const BASE_URL = "http://10.1.3.50:3000";
 
+// Callback for handling authentication failures
+let onAuthFailureCallback: (() => void) | null = null;
+
+export const setAuthFailureCallback = (callback: () => void) => {
+  onAuthFailureCallback = callback;
+};
+
 const apiClient = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -26,7 +33,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle token refresh
+// Add response interceptor to handle token refresh and auth failures
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -40,9 +47,19 @@ apiClient.interceptors.response.use(
         if (refreshResult.success && refreshResult.tokens) {
           originalRequest.headers.Authorization = `Bearer ${refreshResult.tokens.accessToken}`;
           return apiClient(originalRequest);
+        } else {
+          // Token refresh failed - trigger auth failure callback
+          console.log("Token refresh failed, triggering logout");
+          if (onAuthFailureCallback) {
+            onAuthFailureCallback();
+          }
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
+        // Trigger auth failure callback
+        if (onAuthFailureCallback) {
+          onAuthFailureCallback();
+        }
       }
     }
 

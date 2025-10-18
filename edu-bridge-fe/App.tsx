@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
@@ -8,17 +8,26 @@ import MainLayout from "./src/components/MainLayout";
 import LoginScreen from "./src/screens/LoginScreen";
 import SchoolSelectorScreen from "./src/screens/SchoolSelectorScreen";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { setAuthFailureCallback } from "./src/services/apiService";
 
 const Stack = createStackNavigator();
 
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, logout } = useAuth();
   const {
     schools,
     selectedSchool,
     isLoadingSchools,
     selectSchool,
   } = useSchool();
+
+  // Set up auth failure callback
+  useEffect(() => {
+    setAuthFailureCallback(() => {
+      console.log("Auth failure detected, logging out user");
+      logout();
+    });
+  }, [logout]);
 
   if (isAuthLoading || (isAuthenticated && isLoadingSchools)) {
     return (
