@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,17 @@ import {
   Animated,
   Dimensions,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSchool } from "../contexts/SchoolContext";
 import { useClass, Channel } from "../contexts/ClassContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { useAuth } from "../contexts/AuthContext";
+import { apiService, Message } from "../services/apiService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.75;
@@ -28,9 +33,169 @@ const ClassPage: React.FC = () => {
     clearClassSelection,
   } = useClass();
   const { t } = useLocalization();
+  const { user } = useAuth();
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+
+  // Message-related state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const pollingRef = useRef<boolean>(false);
+  const lastMessageTimeRef = useRef<Date>(new Date());
+
+  // Fetch messages when channel changes
+  useEffect(() => {
+    if (selectedChannel && selectedClass) {
+      initializeChannelThread();
+    } else {
+      // Clear messages when no channel selected
+      setMessages([]);
+      setThreadId(null);
+      pollingRef.current = false;
+    }
+
+    return () => {
+      // Stop polling when component unmounts or channel changes
+      pollingRef.current = false;
+    };
+  }, [selectedChannel?.id, selectedClass?.id]);
+
+  const initializeChannelThread = async () => {
+    if (!selectedChannel || !selectedClass) return;
+
+    try {
+      setIsLoadingMessages(true);
+      setMessages([]);
+
+      // Create or get thread (chat history) for this channel group
+      const response = await apiService.createOrGetGroupThread(selectedChannel.id);
+
+      if (response.success) {
+        const channelThreadId = response.data.thread.id;
+        setThreadId(channelThreadId);
+
+        // Fetch existing messages
+        await fetchMessages(channelThreadId);
+
+        // Start polling for new messages
+        pollingRef.current = true;
+        startLongPolling(channelThreadId);
+      }
+    } catch (error) {
+      console.error("Error initializing channel thread:", error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  const fetchMessages = async (channelThreadId: string) => {
+    try {
+      const response = await apiService.getThreadMessages(channelThreadId);
+      if (response.success) {
+        setMessages(response.data.messages);
+        if (response.data.messages.length > 0) {
+          const lastMsg = response.data.messages[response.data.messages.length - 1];
+          lastMessageTimeRef.current = new Date(lastMsg.createdAt);
+        }
+        // Scroll to bottom after loading messages
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: false });
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  const startLongPolling = async (channelThreadId: string) => {
+    while (pollingRef.current) {
+      try {
+        const response = await apiService.pollNewMessages(
+          channelThreadId,
+          lastMessageTimeRef.current,
+          30000 // 30 second timeout
+        );
+
+        if (response.success && response.data.messages.length > 0) {
+          const newMessages = response.data.messages;
+
+          // Filter out messages that already exist in the state
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNewMessages = newMessages.filter(msg => !existingIds.has(msg.id));
+
+            if (uniqueNewMessages.length === 0) {
+              return prev;
+            }
+
+            return [...prev, ...uniqueNewMessages];
+          });
+
+          // Update last message time
+          const lastMsg = newMessages[newMessages.length - 1];
+          lastMessageTimeRef.current = new Date(lastMsg.createdAt);
+
+          // Scroll to bottom
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
+      } catch (error) {
+        // Silently handle polling errors to avoid spam
+        console.log("Polling error (will retry):", error);
+      }
+
+      // Small delay before next poll
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || isSending || !threadId) return;
+
+    const textToSend = messageText.trim();
+
+    setMessageText("");
+
+    try {
+      setIsSending(true);
+      const response = await apiService.sendMessage(threadId, textToSend);
+      if (response.success) {
+        // Add the new message to the list only if it doesn't exist
+        setMessages((prev) => {
+          const exists = prev.some(m => m.id === response.data.message.id);
+          if (exists) {
+            return prev;
+          }
+          return [...prev, response.data.message];
+        });
+
+        // Update last message time
+        lastMessageTimeRef.current = new Date(response.data.message.createdAt);
+
+        // Scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Restore the message text if sending failed
+      setMessageText(textToSend);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
@@ -64,41 +229,20 @@ const ClassPage: React.FC = () => {
     await clearClassSelection();
   };
 
-  const getChannelIcon = (type: Channel["type"]) => {
-    switch (type) {
-      case "news":
-        return "rss";
-      case "general":
-        return "hash";
-      case "assignments":
-        return "clipboard";
-      case "exams":
-        return "file-text";
-      case "extracurricular":
-        return "activity";
-      case "meetings":
-        return "calendar";
-      default:
-        return "hash";
-    }
-  };
-
   const renderChannelItem = ({ item }: { item: Channel }) => {
     const isSelected = selectedChannel?.id === item.id;
-    const isNewsFeed = item.type === "news";
 
     return (
       <TouchableOpacity
         style={[
           styles.channelItem,
           isSelected && styles.channelItemSelected,
-          isNewsFeed && styles.newsFeedItem,
         ]}
         onPress={() => handleChannelSelect(item)}
       >
         <Feather
-          name={getChannelIcon(item.type)}
-          size={isNewsFeed ? 22 : 20}
+          name="hash"
+          size={20}
           color={isSelected ? "#003366" : "#666"}
           style={styles.channelIcon}
         />
@@ -106,12 +250,51 @@ const ClassPage: React.FC = () => {
           style={[
             styles.channelName,
             isSelected && styles.channelNameSelected,
-            isNewsFeed && styles.newsFeedName,
           ]}
         >
           {item.name}
         </Text>
+        <Text style={styles.memberCount}>
+          {item.memberCount} {item.memberCount === 1 ? "member" : "members"}
+        </Text>
       </TouchableOpacity>
+    );
+  };
+
+  const renderMessage = ({ item }: { item: Message }) => {
+    const isMyMessage = item.senderId === user?.id;
+
+    return (
+      <View
+        style={[
+          styles.messageContainer,
+          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+        ]}
+      >
+        <View
+          style={[
+            styles.messageBubble,
+            isMyMessage ? styles.myMessageBubble : styles.theirMessageBubble,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              isMyMessage ? styles.myMessageText : styles.theirMessageText,
+            ]}
+          >
+            {item.content}
+          </Text>
+          <Text
+            style={[
+              styles.messageTime,
+              isMyMessage ? styles.myMessageTime : styles.theirMessageTime,
+            ]}
+          >
+            {formatMessageTime(item.createdAt)}
+          </Text>
+        </View>
+      </View>
     );
   };
 
@@ -128,19 +311,28 @@ const ClassPage: React.FC = () => {
     // Render different content based on channel type
     return (
       <View style={styles.channelContent}>
-        <FlatList
-          data={[]}
-          keyExtractor={(item, index) => index.toString()}
-          ListEmptyComponent={
-            <View style={styles.emptyMessagesContainer}>
-              <Feather name="message-circle" size={60} color="#ccc" />
-              <Text style={styles.emptyText}>{t("class.noMessagesYet")}</Text>
-              <Text style={styles.emptySubtext}>
-                {selectedChannel.description}
-              </Text>
-            </View>
-          }
-        />
+        {isLoadingMessages ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#003366" />
+          </View>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.messagesList}
+            ListEmptyComponent={
+              <View style={styles.emptyMessagesContainer}>
+                <Feather name="message-circle" size={60} color="#ccc" />
+                <Text style={styles.emptyText}>{t("class.noMessagesYet")}</Text>
+                <Text style={styles.emptySubtext}>
+                  {selectedChannel.description}
+                </Text>
+              </View>
+            }
+          />
+        )}
 
         {/* Message Input */}
         <View style={styles.inputContainer}>
@@ -148,11 +340,24 @@ const ClassPage: React.FC = () => {
             style={styles.input}
             placeholder={t("class.typeMessage")}
             placeholderTextColor="#999"
+            value={messageText}
+            onChangeText={setMessageText}
             multiline
             maxLength={1000}
           />
-          <TouchableOpacity style={styles.sendButton}>
-            <Feather name="send" size={20} color="#fff" />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!messageText.trim() || isSending) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSendMessage}
+            disabled={!messageText.trim() || isSending}
+          >
+            {isSending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Feather name="send" size={20} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -160,7 +365,11 @@ const ClassPage: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
       {/* Main Content */}
       <View style={styles.mainContent}>
         {/* Header */}
@@ -222,19 +431,6 @@ const ClassPage: React.FC = () => {
           <Text style={styles.classGrade}>{selectedClass?.grade}</Text>
         </View>
 
-        {/* News Feed (Special Channel) */}
-        {selectedClass?.channels && (
-          <View style={styles.channelSection}>
-            {selectedClass.channels
-              .filter((c) => c.type === "news")
-              .map((channel) => (
-                <View key={channel.id}>
-                  {renderChannelItem({ item: channel })}
-                </View>
-              ))}
-          </View>
-        )}
-
         {/* Channels Header */}
         <View style={styles.channelSectionHeader}>
           <Text style={styles.channelSectionTitle}>{t("class.channels")}</Text>
@@ -242,7 +438,7 @@ const ClassPage: React.FC = () => {
 
         {/* Channel List */}
         <FlatList
-          data={selectedClass?.channels.filter((c) => c.type !== "news") || []}
+          data={selectedClass?.channels || []}
           keyExtractor={(item) => item.id}
           renderItem={renderChannelItem}
           contentContainerStyle={styles.channelList}
@@ -251,11 +447,14 @@ const ClassPage: React.FC = () => {
               <Text style={styles.emptyChannelsText}>
                 {t("class.noChannelsAvailable")}
               </Text>
+              <Text style={styles.emptyChannelsSubtext}>
+                Only users with permission can create channels
+              </Text>
             </View>
           }
         />
       </Animated.View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -401,11 +600,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  channelSection: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
   channelSectionHeader: {
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -430,23 +624,22 @@ const styles = StyleSheet.create({
   channelItemSelected: {
     backgroundColor: "#E8F0F8",
   },
-  newsFeedItem: {
-    backgroundColor: "#f0f8ff",
-  },
   channelIcon: {
     marginRight: 12,
   },
   channelName: {
     fontSize: 16,
     color: "#666",
+    flex: 1,
   },
   channelNameSelected: {
     fontWeight: "600",
     color: "#003366",
   },
-  newsFeedName: {
-    fontWeight: "600",
-    fontSize: 16,
+  memberCount: {
+    fontSize: 12,
+    color: "#999",
+    marginLeft: 8,
   },
   emptyChannelsContainer: {
     padding: 20,
@@ -456,6 +649,67 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     textAlign: "center",
+    marginBottom: 8,
+  },
+  emptyChannelsSubtext: {
+    fontSize: 12,
+    color: "#aaa",
+    textAlign: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  messagesList: {
+    padding: 16,
+    flexGrow: 1,
+  },
+  messageContainer: {
+    marginBottom: 12,
+  },
+  myMessageContainer: {
+    alignItems: "flex-end",
+  },
+  theirMessageContainer: {
+    alignItems: "flex-start",
+  },
+  messageBubble: {
+    maxWidth: "75%",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 18,
+  },
+  myMessageBubble: {
+    backgroundColor: "#003366",
+    borderBottomRightRadius: 4,
+  },
+  theirMessageBubble: {
+    backgroundColor: "#fff",
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  myMessageText: {
+    color: "#fff",
+  },
+  theirMessageText: {
+    color: "#333",
+  },
+  messageTime: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+  myMessageTime: {
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  theirMessageTime: {
+    color: "#999",
+  },
+  sendButtonDisabled: {
+    backgroundColor: "#ccc",
   },
 });
 

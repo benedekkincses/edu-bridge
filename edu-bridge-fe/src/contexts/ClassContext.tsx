@@ -7,13 +7,14 @@ import React, {
 } from "react";
 import { useSchool } from "./SchoolContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiService } from "../services/apiService";
 
 export interface Channel {
   id: string;
   name: string;
-  type: "news" | "general" | "assignments" | "exams" | "extracurricular" | "meetings" | "custom";
   description?: string;
-  isAccessible: boolean;
+  ownerId: string;
+  memberCount: number;
 }
 
 export interface ClassInfo {
@@ -87,121 +88,37 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
     try {
       setIsLoadingClasses(true);
 
-      // TODO: Replace with actual API call
-      // const response = await apiService.getSchoolClasses(selectedSchool.id);
+      // Fetch user's classes from API
+      const response = await apiService.getUserClasses();
 
-      // Mock data for now
-      const mockClasses: ClassInfo[] = [
-        {
-          id: "class-1",
-          name: "Class 5A",
-          grade: "5th Grade",
-          schoolId: selectedSchool?.id || "",
-          schoolName: selectedSchool?.name || "",
-          studentCount: 28,
-          channels: [
-            {
-              id: "news-feed",
-              name: "News Feed",
-              type: "news",
-              description: "Class announcements and updates",
-              isAccessible: true,
-            },
-            {
-              id: "general",
-              name: "General",
-              type: "general",
-              description: "General class discussions",
-              isAccessible: true,
-            },
-            {
-              id: "assignments",
-              name: "Assignments",
-              type: "assignments",
-              description: "Homework and assignments",
-              isAccessible: true,
-            },
-            {
-              id: "exams",
-              name: "Exams",
-              type: "exams",
-              description: "Exam schedules and results",
-              isAccessible: true,
-            },
-            {
-              id: "extracurricular",
-              name: "Extracurricular",
-              type: "extracurricular",
-              description: "After-school activities",
-              isAccessible: true,
-            },
-            {
-              id: "meetings",
-              name: "Parent-Teacher Meetings",
-              type: "meetings",
-              description: "Meeting schedules",
-              isAccessible: true,
-            },
-          ],
-        },
-        {
-          id: "class-2",
-          name: "Class 5B",
-          grade: "5th Grade",
-          schoolId: selectedSchool?.id || "",
-          schoolName: selectedSchool?.name || "",
-          studentCount: 25,
-          channels: [
-            {
-              id: "news-feed-2",
-              name: "News Feed",
-              type: "news",
-              description: "Class announcements and updates",
-              isAccessible: true,
-            },
-            {
-              id: "general-2",
-              name: "General",
-              type: "general",
-              description: "General class discussions",
-              isAccessible: true,
-            },
-          ],
-        },
-      ];
+      if (response.success) {
+        const userClasses: ClassInfo[] = response.data.classes.map((cls: any) => ({
+          id: cls.id,
+          name: cls.name,
+          grade: cls.type, // Using type as grade for now
+          schoolId: cls.schoolId,
+          schoolName: cls.schoolName,
+          studentCount: cls.studentCount,
+          channels: [], // Will be fetched separately
+        }));
 
-      setClasses(mockClasses);
+        setClasses(userClasses);
 
-      // Try to restore previous selection or auto-select
-      const savedClassId = await AsyncStorage.getItem(SELECTED_CLASS_KEY);
-      const savedChannelId = await AsyncStorage.getItem(SELECTED_CHANNEL_KEY);
+        // Try to restore previous selection or auto-select
+        const savedClassId = await AsyncStorage.getItem(SELECTED_CLASS_KEY);
 
-      if (mockClasses.length === 1) {
-        // Auto-select if only one class
-        const singleClass = mockClasses[0];
-        setSelectedClass(singleClass);
-
-        // Auto-select news feed or first channel
-        const newsChannel = singleClass.channels.find(c => c.type === "news");
-        const firstChannel = singleClass.channels[0];
-        setSelectedChannel(newsChannel || firstChannel);
-      } else if (savedClassId) {
-        // Try to restore saved class
-        const savedClass = mockClasses.find(c => c.id === savedClassId);
-        if (savedClass) {
-          setSelectedClass(savedClass);
-
-          if (savedChannelId) {
-            const savedChannel = savedClass.channels.find(c => c.id === savedChannelId);
-            if (savedChannel) {
-              setSelectedChannel(savedChannel);
-            } else {
-              // Default to news feed
-              const newsChannel = savedClass.channels.find(c => c.type === "news");
-              setSelectedChannel(newsChannel || savedClass.channels[0]);
-            }
+        if (userClasses.length === 1) {
+          // Auto-select if only one class
+          await selectClass(userClasses[0]);
+        } else if (savedClassId) {
+          // Try to restore saved class
+          const savedClass = userClasses.find(c => c.id === savedClassId);
+          if (savedClass) {
+            await selectClass(savedClass);
           }
         }
+      } else {
+        setClasses([]);
       }
     } catch (error) {
       console.error("Error fetching classes:", error);
@@ -212,23 +129,46 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
   };
 
   const selectClass = async (classInfo: ClassInfo) => {
-    setSelectedClass(classInfo);
-
-    // Auto-select news feed or first channel
-    const newsChannel = classInfo.channels.find(c => c.type === "news");
-    const firstChannel = classInfo.channels[0];
-    const channelToSelect = newsChannel || firstChannel;
-
-    setSelectedChannel(channelToSelect);
-
-    // Save selection
     try {
-      await AsyncStorage.setItem(SELECTED_CLASS_KEY, classInfo.id);
-      if (channelToSelect) {
-        await AsyncStorage.setItem(SELECTED_CHANNEL_KEY, channelToSelect.id);
+      // Fetch channels (groups) for this class
+      const response = await apiService.getClassGroups(classInfo.id);
+
+      if (response.success) {
+        const channels = response.data.groups;
+
+        // Update the class info with fetched channels
+        const updatedClass = {
+          ...classInfo,
+          channels,
+        };
+
+        setSelectedClass(updatedClass);
+
+        // Auto-select first channel if available, otherwise clear selection
+        const firstChannel = channels.length > 0 ? channels[0] : null;
+        setSelectedChannel(firstChannel);
+
+        // Save selection
+        await AsyncStorage.setItem(SELECTED_CLASS_KEY, classInfo.id);
+        if (firstChannel) {
+          await AsyncStorage.setItem(SELECTED_CHANNEL_KEY, firstChannel.id);
+        } else {
+          await AsyncStorage.removeItem(SELECTED_CHANNEL_KEY);
+        }
+      } else {
+        // No channels found, just select the class
+        setSelectedClass(classInfo);
+        setSelectedChannel(null);
+        await AsyncStorage.setItem(SELECTED_CLASS_KEY, classInfo.id);
+        await AsyncStorage.removeItem(SELECTED_CHANNEL_KEY);
       }
     } catch (error) {
-      console.error("Error saving class selection:", error);
+      console.error("Error selecting class or fetching channels:", error);
+      // Fallback: select class without channels
+      setSelectedClass(classInfo);
+      setSelectedChannel(null);
+      await AsyncStorage.setItem(SELECTED_CLASS_KEY, classInfo.id);
+      await AsyncStorage.removeItem(SELECTED_CHANNEL_KEY);
     }
   };
 

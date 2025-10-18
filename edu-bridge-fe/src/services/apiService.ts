@@ -446,4 +446,38 @@ export const apiService = {
       throw error;
     }
   },
+
+  // Class API methods
+  async getUserClasses(): Promise<any> {
+    try {
+      const response = await apiClient.get("/api/classes");
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getClassGroups(classId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/api/classes/${classId}/groups`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async createGroup(classId: string, name: string, description?: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/api/classes/${classId}/groups`, {
+        name,
+        description,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
 };

@@ -401,7 +401,7 @@ export const messageService = {
   },
 
   /**
-   * Create or get a group thread
+   * Create or get a group thread (chat history)
    */
   async createOrGetGroupThread(groupId: string) {
     const existingThread = await prisma.threads.findUnique({
