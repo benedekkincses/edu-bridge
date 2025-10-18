@@ -54,12 +54,12 @@ const AppHeader: React.FC = () => {
         activeOpacity={showSchoolDropdown ? 0.6 : 1}
         disabled={!showSchoolDropdown}
       >
-        <Feather name="home" size={20} color="#007AFF" style={styles.schoolIcon} />
+        <Feather name="home" size={20} color="#003366" style={styles.schoolIcon} />
         <Text style={styles.schoolName}>
           {selectedSchool?.name || "No School"}
         </Text>
         {showSchoolDropdown && (
-          <Feather name="chevron-down" size={16} color="#007AFF" />
+          <Feather name="chevron-down" size={16} color="#003366" />
         )}
       </TouchableOpacity>
 
@@ -151,7 +151,7 @@ const AppHeader: React.FC = () => {
                     {item.name}
                   </Text>
                   {selectedSchool?.id === item.id && (
-                    <Feather name="check" size={20} color="#007AFF" />
+                    <Feather name="check" size={20} color="#003366" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#E8EAED",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
@@ -186,13 +186,13 @@ const styles = StyleSheet.create({
   schoolName: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#007AFF",
+    color: "#003366",
   },
   profileIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#003366",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   schoolItemTextSelected: {
-    color: "#007AFF",
+    color: "#003366",
     fontWeight: "600",
   },
 });

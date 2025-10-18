@@ -36,7 +36,7 @@ const AppFooter: React.FC<AppFooterProps> = ({ currentRoute, onNavigate }) => {
             <Feather
               name={item.iconName}
               size={24}
-              color={isActive ? "#007AFF" : "#999"}
+              color={isActive ? "#003366" : "#999"}
               style={styles.menuIcon}
             />
             <Text
@@ -57,7 +57,7 @@ const AppFooter: React.FC<AppFooterProps> = ({ currentRoute, onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: "#E8EAED",
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
     paddingBottom: 20,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   menuLabelActive: {
-    color: "#007AFF",
+    color: "#003366",
     fontWeight: "600",
   },
 });

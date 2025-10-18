@@ -16,7 +16,7 @@ const NoSchoolFrame: React.FC<NoSchoolFrameProps> = ({
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.iconContainer}>
-        <Feather name={iconName} size={60} color="#666" />
+        <Feather name={iconName} size={60} color="#003366" />
       </View>
       <Text style={styles.title}>Not Connected to Any School</Text>
       <Text style={styles.subtitle}>{pageName}</Text>
@@ -42,7 +42,7 @@ const NoSchoolFrame: React.FC<NoSchoolFrameProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
   },
   content: {
     flexGrow: 1,
