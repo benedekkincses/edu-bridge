@@ -101,10 +101,6 @@ export const hu: TranslationKeys = {
     step2: "A hozzáadás után hozzáférhet az összes funkcióhoz",
     step3: "Értesítéseket fog kapni a tanároktól és az iskolai személyzettől",
   },
-  newsFeed: "Hírek",
-  class: "Osztály",
-  messages: "Üzenetek",
-  calendar: "Naptár",
   profile: {
     menuName: "Profil",
     menuEmail: "E-mail",

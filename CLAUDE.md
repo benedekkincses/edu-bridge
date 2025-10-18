@@ -7,3 +7,4 @@ When you are done with a ticket task, move the ticket md file to the claude/gene
 Always analyze the current state of the project before starting a new task.
 Current state of the project overrides the architecture you have created, but you should try to keep the architecture as close as possible to what you have created on new tasks.
 When creating something that requires setup from a new developer, always modify the claude/setup.md file to include the new setup steps.
+When you add a translation key to the project, always add it to all the languages.
