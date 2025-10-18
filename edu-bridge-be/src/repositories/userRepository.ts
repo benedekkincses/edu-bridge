@@ -43,6 +43,40 @@ export class UserRepository {
   async count(): Promise<number> {
     return await prisma.users.count();
   }
+
+  /**
+   * Upsert a user (create if doesn't exist, update if exists)
+   * @param userData - User data from Keycloak
+   * @returns Promise<users> - Created or updated user
+   */
+  async upsert(userData: {
+    id: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }): Promise<users> {
+    return await prisma.users.upsert({
+      where: { id: userData.id },
+      update: {
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phone: userData.phone,
+        updatedAt: new Date(),
+      },
+      create: {
+        id: userData.id,
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phone: userData.phone,
+      },
+    });
+  }
 }
 
 export const userRepository = new UserRepository();

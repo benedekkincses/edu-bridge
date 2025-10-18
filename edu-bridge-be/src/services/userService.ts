@@ -35,6 +35,23 @@ export class UserService {
   async getUserCount(): Promise<number> {
     return await userRepository.count();
   }
+
+  /**
+   * Upsert user from Keycloak token data
+   * Creates new user if they don't exist, updates existing user if they do
+   * @param userData - User data from Keycloak token
+   * @returns Promise<users> - Created or updated user
+   */
+  async upsertUserFromToken(userData: {
+    id: string;
+    username?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }): Promise<users> {
+    return await userRepository.upsert(userData);
+  }
 }
 
 export const userService = new UserService();

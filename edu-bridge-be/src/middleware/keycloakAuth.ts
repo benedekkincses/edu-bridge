@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-client";
 import { Request, Response, NextFunction } from "express";
+import { userService } from "../services/userService.js";
 
 // Keycloak configuration
 const KEYCLOAK_URL = "http://localhost:8080";
@@ -40,12 +41,13 @@ interface KeycloakToken {
   };
   scope: string;
   sid: string;
-  email_verified: boolean;
-  name: string;
-  preferred_username: string;
-  given_name: string;
-  family_name: string;
-  email: string;
+  email_verified?: boolean;
+  name?: string;
+  preferred_username?: string;
+  given_name?: string;
+  family_name?: string;
+  email?: string;
+  phone_number?: string; // Optional phone number from Keycloak
 }
 
 // Function to get signing key
@@ -115,9 +117,32 @@ export const verifyToken = (
         });
       }
 
-      // Add user info to request
-      req.user = decodedToken;
-      next();
+      // Upsert user in database (create or update)
+      const userData = {
+        id: decodedToken.sub,
+        username: decodedToken.preferred_username || null,
+        firstName: decodedToken.given_name || null,
+        lastName: decodedToken.family_name || null,
+        email: decodedToken.email || null,
+        phone: decodedToken.phone_number || null,
+      };
+
+      console.log("Upserting user with data:", userData);
+
+      userService.upsertUserFromToken(userData)
+      .then((user) => {
+        console.log("User upserted successfully:", user);
+        // Add user info to request
+        req.user = decodedToken;
+        next();
+      })
+      .catch((error) => {
+        console.error("Error upserting user:", error);
+        // Still allow the request to proceed even if user upsert fails
+        // This prevents authentication from failing due to database issues
+        req.user = decodedToken;
+        next();
+      });
     }
   );
 };

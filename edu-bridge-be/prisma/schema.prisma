@@ -249,6 +249,19 @@ model threads {
   groups              groups?               @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
 
+model users {
+  id        String    @id // Keycloak user ID
+  username  String?
+  firstName String?
+  lastName  String?
+  email     String?   @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([email])
+}
+
 model user_privacy_settings {
   id           String  @id
   userId       String  // Keycloak user ID
