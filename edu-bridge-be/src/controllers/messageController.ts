@@ -280,7 +280,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const userId = user.sub;
     const { threadId } = req.params;
-    const { content } = req.body;
+    const { content, parentMessageId } = req.body;
 
     if (!content) {
       return res.status(400).json({
@@ -289,7 +289,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       });
     }
 
-    const message = await messageService.sendMessage(threadId, userId, content);
+    const message = await messageService.sendMessage(threadId, userId, content, parentMessageId);
 
     res.json({
       success: true,
@@ -300,6 +300,13 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     if (error.message === "User does not have access to this thread") {
       return res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    if (error.message === "Parent message not found") {
+      return res.status(404).json({
         success: false,
         error: error.message,
       });
@@ -358,6 +365,203 @@ export const markMessageAsRead = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: "Failed to mark message as read",
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/groups/{groupId}/thread:
+ *   post:
+ *     summary: Create or get group thread
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thread created or retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+export const createOrGetGroupThread = async (req: Request, res: Response) => {
+  try {
+    const user = getUserInfo(req);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated",
+      });
+    }
+
+    const { groupId } = req.params;
+
+    const thread = await messageService.createOrGetGroupThread(groupId);
+
+    res.json({
+      success: true,
+      data: { thread },
+    });
+  } catch (error: any) {
+    console.error("Error creating/getting group thread:", error);
+
+    if (error.message === "Group not found") {
+      return res.status(404).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to create or get group thread",
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/classes/{classId}/thread:
+ *   post:
+ *     summary: Create or get class channel thread
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: classId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thread created or retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+export const createOrGetClassThread = async (req: Request, res: Response) => {
+  try {
+    const user = getUserInfo(req);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated",
+      });
+    }
+
+    const { classId } = req.params;
+
+    const thread = await messageService.createOrGetClassThread(classId);
+
+    res.json({
+      success: true,
+      data: { thread },
+    });
+  } catch (error: any) {
+    console.error("Error creating/getting class thread:", error);
+
+    if (error.message === "Class not found") {
+      return res.status(404).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to create or get class thread",
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/threads/{threadId}/poll:
+ *   get:
+ *     summary: Long poll for new messages
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: since
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: timeout
+ *         schema:
+ *           type: integer
+ *           default: 30000
+ *     responses:
+ *       200:
+ *         description: New messages retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: User does not have access to this thread
+ *       500:
+ *         description: Internal server error
+ */
+export const pollNewMessages = async (req: Request, res: Response) => {
+  try {
+    const user = getUserInfo(req);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated",
+      });
+    }
+
+    const userId = user.sub;
+    const { threadId } = req.params;
+    const since = new Date(req.query.since as string);
+    const timeout = parseInt(req.query.timeout as string) || 30000;
+
+    if (isNaN(since.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid 'since' timestamp",
+      });
+    }
+
+    const messages = await messageService.pollNewMessages(threadId, userId, since, timeout);
+
+    res.json({
+      success: true,
+      data: {
+        messages,
+        count: messages.length,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error polling messages:", error);
+
+    if (error.message === "User does not have access to this thread") {
+      return res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to poll messages",
     });
   }
 };

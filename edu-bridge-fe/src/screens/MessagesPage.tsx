@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useSchool } from "../contexts/SchoolContext";
 import { useAuth } from "../contexts/AuthContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
@@ -20,6 +22,7 @@ const MessagesPage: React.FC = () => {
   const { schools, selectedSchool } = useSchool();
   const { user } = useAuth();
   const { t } = useLocalization();
+  const navigation = useNavigation<any>();
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [filteredThreads, setFilteredThreads] = useState<Thread[]>([]);
@@ -30,6 +33,7 @@ const MessagesPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<SchoolUser[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
@@ -47,6 +51,17 @@ const MessagesPage: React.FC = () => {
       fetchThreads();
     }
   }, [selectedSchool, user]);
+
+  // Refresh threads when navigating back to this screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (selectedSchool && user) {
+        fetchThreads();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, selectedSchool, user]);
 
   useEffect(() => {
     filterThreads();
@@ -111,13 +126,33 @@ const MessagesPage: React.FC = () => {
     if (!selectedSchool) return;
 
     setIsModalVisible(true);
+    slideAnim.setValue(0);
+
+    // Animate slide up
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
     setIsLoadingUsers(true);
 
     try {
       const response = await apiService.getSchoolUsers(selectedSchool.id);
       if (response.success) {
-        setSchoolUsers(response.data.users);
-        setFilteredUsers(response.data.users);
+        // Filter out users that already have existing threads
+        const existingParticipantIds = new Set(
+          threads
+            .map((thread) => thread.participant?.id)
+            .filter((id): id is string => id !== null && id !== undefined)
+        );
+
+        const availableUsers = response.data.users.filter(
+          (user) => !existingParticipantIds.has(user.id)
+        );
+
+        setSchoolUsers(availableUsers);
+        setFilteredUsers(availableUsers);
       }
     } catch (error) {
       console.error("Error fetching school users:", error);
@@ -128,7 +163,7 @@ const MessagesPage: React.FC = () => {
 
   const handleSelectUser = async (selectedUser: SchoolUser) => {
     try {
-      setIsModalVisible(false);
+      closeModal();
       setIsLoading(true);
 
       // Create or get existing thread
@@ -137,8 +172,12 @@ const MessagesPage: React.FC = () => {
       if (response.success) {
         // Refresh threads to include the new one
         await fetchThreads();
-        // TODO: Navigate to chat view with this thread
-        console.log("Thread created/retrieved:", response.data.thread);
+
+        // Open the chat screen
+        navigation.navigate("Chat", {
+          threadId: response.data.thread.id,
+          participantName: `${selectedUser.firstName} ${selectedUser.lastName}`,
+        });
       }
     } catch (error) {
       console.error("Error creating thread:", error);
@@ -148,9 +187,24 @@ const MessagesPage: React.FC = () => {
     }
   };
 
+  const handleThreadPress = (thread: Thread) => {
+    if (!thread.participant) return;
+
+    navigation.navigate("Chat", {
+      threadId: thread.threadId,
+      participantName: `${thread.participant.firstName} ${thread.participant.lastName}`,
+    });
+  };
+
   const closeModal = () => {
-    setIsModalVisible(false);
-    setUserSearchQuery("");
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsModalVisible(false);
+      setUserSearchQuery("");
+    });
   };
 
   const formatTime = (dateString: string) => {
@@ -169,7 +223,15 @@ const MessagesPage: React.FC = () => {
   };
 
   const renderAIAssistant = () => (
-    <TouchableOpacity style={styles.threadItem} onPress={() => {}}>
+    <TouchableOpacity
+      style={styles.threadItem}
+      onPress={() => {
+        navigation.navigate("Chat", {
+          threadId: "ai-assistant",
+          participantName: t("messages.aiAssistant"),
+        });
+      }}
+    >
       <View style={styles.avatarContainer}>
         <View style={[styles.avatar, styles.aiAvatar]}>
           <Feather name="cpu" size={24} color="#fff" />
@@ -193,7 +255,10 @@ const MessagesPage: React.FC = () => {
     const initials = `${item.participant.firstName.charAt(0)}${item.participant.lastName.charAt(0)}`.toUpperCase();
 
     return (
-      <TouchableOpacity style={styles.threadItem} onPress={() => {}}>
+      <TouchableOpacity
+        style={styles.threadItem}
+        onPress={() => handleThreadPress(item)}
+      >
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -243,6 +308,7 @@ const MessagesPage: React.FC = () => {
             {item.firstName} {item.lastName}
           </Text>
           {item.email && <Text style={styles.userEmail}>{item.email}</Text>}
+          <Text style={styles.userId}>ID: {item.id}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -296,12 +362,26 @@ const MessagesPage: React.FC = () => {
       {/* Add Contact Modal */}
       <Modal
         visible={isModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [600, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t("messages.findPeople")}</Text>
               <TouchableOpacity onPress={closeModal}>
@@ -349,7 +429,7 @@ const MessagesPage: React.FC = () => {
                 }
               />
             )}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -550,6 +630,12 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: "#666",
+  },
+  userId: {
+    fontSize: 12,
+    color: "#999",
+    fontFamily: "monospace",
+    marginTop: 2,
   },
 });
 

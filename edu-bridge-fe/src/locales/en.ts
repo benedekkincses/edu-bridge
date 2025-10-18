@@ -55,6 +55,16 @@ export const en = {
     channelNavigationTitle: "Channel Navigation",
     channelNavigationContent:
       "Parents can navigate between different channels to see specific content relevant to each category.",
+    selectClass: "Select a Class",
+    selectClassSubtitle: "Choose which class you'd like to view",
+    searchClasses: "Search classes...",
+    channels: "Channels",
+    newsFeed: "News Feed",
+    backToClassSelection: "Back to Classes",
+    noChannelsAvailable: "No channels available",
+    noMessagesYet: "No messages in this channel yet",
+    typeMessage: "Type a message...",
+    sendMessage: "Send",
   },
   messages: {
     title: "Messages",

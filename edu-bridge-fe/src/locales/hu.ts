@@ -57,6 +57,16 @@ export const hu: TranslationKeys = {
     channelNavigationTitle: "Csatorna navigáció",
     channelNavigationContent:
       "A szülők navigálhatnak a különböző csatornák között, hogy az egyes kategóriákhoz kapcsolódó tartalmat láthassák.",
+    selectClass: "Válasszon osztályt",
+    selectClassSubtitle: "Válassza ki, melyik osztályt szeretné megtekinteni",
+    searchClasses: "Osztályok keresése...",
+    channels: "Csatornák",
+    newsFeed: "Hírek",
+    backToClassSelection: "Vissza az osztályokhoz",
+    noChannelsAvailable: "Nincsenek elérhető csatornák",
+    noMessagesYet: "Még nincsenek üzenetek ebben a csatornában",
+    typeMessage: "Írjon üzenetet...",
+    sendMessage: "Küldés",
   },
   messages: {
     title: "Üzenetek",
