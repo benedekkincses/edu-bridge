@@ -48,6 +48,7 @@ interface KeycloakToken {
   family_name?: string;
   email?: string;
   phone_number?: string; // Optional phone number from Keycloak
+  phone_number_verified?: boolean; // Optional phone verification status
 }
 
 // Function to get signing key
@@ -109,7 +110,10 @@ export const verifyToken = (
 
       // Verify the token is from our frontend client
       const decodedToken = decoded as KeycloakToken;
-      if (decodedToken.azp !== "edu-bridge-frontend" && decodedToken.azp !== CLIENT_ID) {
+      if (
+        decodedToken.azp !== "edu-bridge-frontend" &&
+        decodedToken.azp !== CLIENT_ID
+      ) {
         return res.status(401).json({
           error: "Invalid token",
           message: "Token not issued for this application",
@@ -129,20 +133,21 @@ export const verifyToken = (
 
       console.log("Upserting user with data:", userData);
 
-      userService.upsertUserFromToken(userData)
-      .then((user) => {
-        console.log("User upserted successfully:", user);
-        // Add user info to request
-        req.user = decodedToken;
-        next();
-      })
-      .catch((error) => {
-        console.error("Error upserting user:", error);
-        // Still allow the request to proceed even if user upsert fails
-        // This prevents authentication from failing due to database issues
-        req.user = decodedToken;
-        next();
-      });
+      userService
+        .upsertUserFromToken(userData)
+        .then((user) => {
+          console.log("User upserted successfully:", user);
+          // Add user info to request
+          req.user = decodedToken;
+          next();
+        })
+        .catch((error) => {
+          console.error("Error upserting user:", error);
+          // Still allow the request to proceed even if user upsert fails
+          // This prevents authentication from failing due to database issues
+          req.user = decodedToken;
+          next();
+        });
     }
   );
 };

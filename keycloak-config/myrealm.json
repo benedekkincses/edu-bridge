@@ -89,9 +89,14 @@
       ],
       "webOrigins": [
         "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:8080",
         "http://10.1.2.98:3000",
         "http://localhost:8081",
-        "http://10.1.2.98:8081"
+        "http://10.1.2.98:8081",
+        "http://localhost:8082",
+        "http://10.1.2.98:8082"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -145,10 +150,20 @@
       "redirectUris": [
         "http://localhost:8081/*",
         "http://10.1.2.98:8081/*",
+        "http://localhost:8082/*",
+        "http://10.1.2.98:8082/*",
         "exp://10.1.2.98:8081/*",
-        "exp://localhost:8081/*"
+        "exp://localhost:8081/*",
+        "exp://10.1.2.98:8082/*",
+        "exp://localhost:8082/*"
       ],
-      "webOrigins": ["http://localhost:8081", "http://10.1.2.98:8081"],
+      "webOrigins": [
+        "http://localhost:8081",
+        "http://10.1.2.98:8081",
+        "http://localhost:8082",
+        "http://localhost:8080",
+        "http://10.1.2.98:8082"
+      ],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -206,21 +221,29 @@
         {
           "name": "email",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-full-name-mapper",
+          "protocolMapper": "oidc-usermodel-property-mapper",
           "consentRequired": false,
           "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "email",
+            "id.token.claim": "true",
             "access.token.claim": "true",
-            "id.token.claim": "true"
+            "claim.name": "email",
+            "jsonType.label": "String"
           }
         },
         {
           "name": "email verified",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-address-mapper",
+          "protocolMapper": "oidc-usermodel-property-mapper",
           "consentRequired": false,
           "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "emailVerified",
+            "id.token.claim": "true",
             "access.token.claim": "true",
-            "id.token.claim": "true"
+            "claim.name": "email_verified",
+            "jsonType.label": "Boolean"
           }
         }
       ]
@@ -243,6 +266,34 @@
           "config": {
             "access.token.claim": "true",
             "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "first name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "firstName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "given_name",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "last name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "lastName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "family_name",
+            "jsonType.label": "String"
           }
         },
         {
@@ -487,21 +538,29 @@
         {
           "name": "phone number",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-phone-number-mapper",
+          "protocolMapper": "oidc-usermodel-property-mapper",
           "consentRequired": false,
           "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "phone",
+            "id.token.claim": "true",
             "access.token.claim": "true",
-            "id.token.claim": "true"
+            "claim.name": "phone_number",
+            "jsonType.label": "String"
           }
         },
         {
           "name": "phone number verified",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-phone-number-verified-mapper",
+          "protocolMapper": "oidc-usermodel-property-mapper",
           "consentRequired": false,
           "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "phoneVerified",
+            "id.token.claim": "true",
             "access.token.claim": "true",
-            "id.token.claim": "true"
+            "claim.name": "phone_number_verified",
+            "jsonType.label": "Boolean"
           }
         }
       ]
@@ -581,6 +640,7 @@
       "firstName": "Admin",
       "lastName": "User",
       "email": "admin@edubridge.com",
+      "phone": "+1234567890",
       "credentials": [
         {
           "type": "password",
@@ -600,6 +660,7 @@
       "firstName": "John",
       "lastName": "Doe",
       "email": "john.doe@student.com",
+      "phone": "+1234567891",
       "credentials": [
         {
           "type": "password",
@@ -619,6 +680,7 @@
       "firstName": "Alice",
       "lastName": "Johnson",
       "email": "alice.johnson@student.com",
+      "phone": "+1234567892",
       "credentials": [
         {
           "type": "password",
@@ -638,6 +700,7 @@
       "firstName": "Jane",
       "lastName": "Smith",
       "email": "jane.smith@teacher.com",
+      "phone": "+1234567893",
       "credentials": [
         {
           "type": "password",
@@ -657,6 +720,7 @@
       "firstName": "Bob",
       "lastName": "Wilson",
       "email": "bob.wilson@teacher.com",
+      "phone": "+1234567894",
       "credentials": [
         {
           "type": "password",

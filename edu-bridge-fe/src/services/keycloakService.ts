@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 // Keycloak configuration
 // Use your computer's IP address for mobile devices
-const KEYCLOAK_URL = "http://10.1.3.50:8080";
+const KEYCLOAK_URL = "http://10.1.2.98:8080";
 const REALM = "myrealm";
 const CLIENT_ID = "edu-bridge-frontend";
 
@@ -19,6 +19,8 @@ export interface KeycloakUser {
   email: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  phoneVerified?: boolean;
   roles: string[];
   emailVerified: boolean;
   name: string;
@@ -86,7 +88,7 @@ class KeycloakService {
         client_id: this.clientId,
         username: credentials.username,
         password: credentials.password,
-        scope: "openid profile email",
+        scope: "openid profile email phone",
       });
 
       const response = await fetch(tokenUrl, {
@@ -171,6 +173,8 @@ class KeycloakService {
         email: userData.email,
         firstName: userData.given_name,
         lastName: userData.family_name,
+        phone: userData.phone_number,
+        phoneVerified: userData.phone_number_verified,
         roles: userData.realm_access?.roles || [],
         emailVerified: userData.email_verified,
         name: userData.name,
