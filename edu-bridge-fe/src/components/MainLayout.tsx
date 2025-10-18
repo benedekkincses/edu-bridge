@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { View, StyleSheet, SafeAreaView } from "react-native";
+import { createStackNavigator } from "@react-navigation/stack";
 import AppHeader from "./AppHeader";
 import AppFooter, { AppRoute } from "./AppFooter";
 import NewsPage from "../screens/NewsPage";
 import ClassPage from "../screens/ClassPage";
 import MessagesPage from "../screens/MessagesPage";
 import CalendarPage from "../screens/CalendarPage";
+import ProfilePage from "../screens/ProfilePage";
 
-const MainLayout: React.FC = () => {
+const Stack = createStackNavigator();
+
+const MainContent: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState<AppRoute>("News");
 
   const renderContent = () => {
@@ -33,6 +37,15 @@ const MainLayout: React.FC = () => {
         <AppFooter currentRoute={currentRoute} onNavigate={setCurrentRoute} />
       </View>
     </SafeAreaView>
+  );
+};
+
+const MainLayout: React.FC = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainContent" component={MainContent} />
+      <Stack.Screen name="Profile" component={ProfilePage} />
+    </Stack.Navigator>
   );
 };
 

@@ -12,7 +12,7 @@ const CalendarPage: React.FC = () => {
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName={t("calendar")}
+        pageName={t("footer.calendar")}
         iconName="calendar"
         message={t("noSchool.calendarMessage")}
       />

@@ -12,7 +12,7 @@ const ClassPage: React.FC = () => {
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName={t("class")}
+        pageName={t("footer.class")}
         iconName="book-open"
         message={t("noSchool.classMessage")}
       />

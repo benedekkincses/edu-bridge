@@ -12,7 +12,7 @@ const MessagesPage: React.FC = () => {
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName={t("messages")}
+        pageName={t("footer.messages")}
         iconName="message-circle"
         message={t("noSchool.messagesMessage")}
       />

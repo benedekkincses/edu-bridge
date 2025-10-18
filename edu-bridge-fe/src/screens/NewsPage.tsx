@@ -12,7 +12,7 @@ const NewsPage: React.FC = () => {
   if (schools.length === 0) {
     return (
       <NoSchoolFrame
-        pageName={t("newsFeed")}
+        pageName={t("footer.news")}
         iconName="file-text"
         message={t("noSchool.newsFeedMessage")}
       />

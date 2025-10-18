@@ -9,12 +9,14 @@ import {
   Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 import { useSchool } from "../contexts/SchoolContext";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { Language } from "../locales";
 
 const AppHeader: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { user, logout } = useAuth();
   const { schools, selectedSchool, selectSchool } = useSchool();
   const { language, setLanguage, t } = useLocalization();
@@ -97,6 +99,17 @@ const AppHeader: React.FC = () => {
               </Text>
               <Text style={styles.profileMenuEmail}>{user?.email}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.profileMenuItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                navigation.navigate("Profile");
+              }}
+            >
+              <Feather name="user" size={20} color="#003366" style={styles.profileMenuIcon} />
+              <Text style={styles.profileMenuItemTextNormal}>{t("profile.menuName")}</Text>
+              <Feather name="chevron-right" size={20} color="#666" />
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.profileMenuItem}
               onPress={() => {
