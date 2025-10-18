@@ -8,6 +8,7 @@ import ClassPage from "../screens/ClassPage";
 import MessagesPage from "../screens/MessagesPage";
 import CalendarPage from "../screens/CalendarPage";
 import ProfilePage from "../screens/ProfilePage";
+import ChatScreen from "../screens/ChatScreen";
 
 const Stack = createStackNavigator();
 
@@ -45,6 +46,7 @@ const MainLayout: React.FC = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainContent" component={MainContent} />
       <Stack.Screen name="Profile" component={ProfilePage} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>
   );
 };

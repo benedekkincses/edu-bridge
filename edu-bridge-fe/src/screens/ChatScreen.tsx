@@ -9,22 +9,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { useAuth } from "../contexts/AuthContext";
 import { apiService, Message } from "../services/apiService";
 
-interface ChatScreenProps {
-  threadId: string;
-  participantName: string;
-  onBack: () => void;
-}
-
-const ChatScreen: React.FC<ChatScreenProps> = ({
-  threadId,
-  participantName,
-  onBack,
-}) => {
+const ChatScreen: React.FC = () => {
+  const route = useRoute<any>();
+  const navigation = useNavigation();
+  const { threadId, participantName } = route.params;
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
@@ -123,14 +118,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+    <View style={styles.fullscreen}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="arrow-left" size={24} color="#003366" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -188,11 +185,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
           )}
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  fullscreen: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 44,
+    paddingBottom: Platform.OS === "android" ? 0 : 34,
+  },
   container: {
     flex: 1,
     backgroundColor: "#E8EAED",

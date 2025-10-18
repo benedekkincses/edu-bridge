@@ -11,17 +11,18 @@ import {
   Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useSchool } from "../contexts/SchoolContext";
 import { useAuth } from "../contexts/AuthContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { apiService, Thread, SchoolUser } from "../services/apiService";
-import ChatScreen from "./ChatScreen";
 
 const MessagesPage: React.FC = () => {
   const { schools, selectedSchool } = useSchool();
   const { user } = useAuth();
   const { t } = useLocalization();
+  const navigation = useNavigation<any>();
 
   const [threads, setThreads] = useState<Thread[]>([]);
   const [filteredThreads, setFilteredThreads] = useState<Thread[]>([]);
@@ -33,10 +34,6 @@ const MessagesPage: React.FC = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const [selectedThread, setSelectedThread] = useState<{
-    threadId: string;
-    participantName: string;
-  } | null>(null);
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
@@ -54,6 +51,17 @@ const MessagesPage: React.FC = () => {
       fetchThreads();
     }
   }, [selectedSchool, user]);
+
+  // Refresh threads when navigating back to this screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (selectedSchool && user) {
+        fetchThreads();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, selectedSchool, user]);
 
   useEffect(() => {
     filterThreads();
@@ -166,7 +174,7 @@ const MessagesPage: React.FC = () => {
         await fetchThreads();
 
         // Open the chat screen
-        setSelectedThread({
+        navigation.navigate("Chat", {
           threadId: response.data.thread.id,
           participantName: `${selectedUser.firstName} ${selectedUser.lastName}`,
         });
@@ -182,16 +190,10 @@ const MessagesPage: React.FC = () => {
   const handleThreadPress = (thread: Thread) => {
     if (!thread.participant) return;
 
-    setSelectedThread({
+    navigation.navigate("Chat", {
       threadId: thread.threadId,
       participantName: `${thread.participant.firstName} ${thread.participant.lastName}`,
     });
-  };
-
-  const handleBackFromChat = () => {
-    setSelectedThread(null);
-    // Refresh threads when coming back
-    fetchThreads();
   };
 
   const closeModal = () => {
@@ -224,7 +226,7 @@ const MessagesPage: React.FC = () => {
     <TouchableOpacity
       style={styles.threadItem}
       onPress={() => {
-        setSelectedThread({
+        navigation.navigate("Chat", {
           threadId: "ai-assistant",
           participantName: t("messages.aiAssistant"),
         });
@@ -311,17 +313,6 @@ const MessagesPage: React.FC = () => {
       </TouchableOpacity>
     );
   };
-
-  // If a thread is selected, show the chat screen
-  if (selectedThread) {
-    return (
-      <ChatScreen
-        threadId={selectedThread.threadId}
-        participantName={selectedThread.participantName}
-        onBack={handleBackFromChat}
-      />
-    );
-  }
 
   return (
     <View style={styles.container}>
