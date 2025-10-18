@@ -243,6 +243,7 @@ const MessagesPage: React.FC = () => {
             {item.firstName} {item.lastName}
           </Text>
           {item.email && <Text style={styles.userEmail}>{item.email}</Text>}
+          <Text style={styles.userId}>ID: {item.id}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -550,6 +551,12 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: "#666",
+  },
+  userId: {
+    fontSize: 12,
+    color: "#999",
+    fontFamily: "monospace",
+    marginTop: 2,
   },
 });
 

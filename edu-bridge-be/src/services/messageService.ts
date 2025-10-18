@@ -7,12 +7,15 @@ export const messageService = {
    * Get all users in a specific school (for finding people to chat with)
    */
   async getSchoolUsers(schoolId: string, currentUserId: string) {
+    console.log(`Getting users for school ${schoolId}, excluding user ${currentUserId}`);
+
     // Get all users who have access to this school
     // This includes teachers, parents, and admins
     const schoolAdmins = await prisma.school_admins.findMany({
       where: { schoolId },
       select: { userId: true },
     });
+    console.log(`Found ${schoolAdmins.length} school admins`);
 
     const classMemberships = await prisma.class_memberships.findMany({
       where: {
@@ -20,6 +23,7 @@ export const messageService = {
       },
       select: { userId: true },
     });
+    console.log(`Found ${classMemberships.length} class memberships`);
 
     const childAssignments = await prisma.child_class_assignments.findMany({
       where: {
@@ -27,15 +31,27 @@ export const messageService = {
       },
       select: { parentId: true },
     });
+    console.log(`Found ${childAssignments.length} child assignments`);
+
+    const schoolPermissions = await prisma.school_permissions.findMany({
+      where: { schoolId },
+      select: { userId: true },
+    });
+    console.log(`Found ${schoolPermissions.length} school permissions`);
 
     // Combine all unique user IDs
     const userIds = new Set<string>();
     schoolAdmins.forEach((admin) => userIds.add(admin.userId));
     classMemberships.forEach((member) => userIds.add(member.userId));
     childAssignments.forEach((assignment) => userIds.add(assignment.parentId));
+    schoolPermissions.forEach((perm) => userIds.add(perm.userId));
+
+    console.log(`Total unique user IDs before filtering: ${userIds.size}`, Array.from(userIds));
 
     // Remove current user
     userIds.delete(currentUserId);
+
+    console.log(`Total unique user IDs after filtering out current user: ${userIds.size}`, Array.from(userIds));
 
     // Fetch user details
     const users = await prisma.users.findMany({
@@ -51,6 +67,8 @@ export const messageService = {
         email: true,
       },
     });
+
+    console.log(`Fetched ${users.length} users from database`, users);
 
     return users;
   },
@@ -186,10 +204,13 @@ export const messageService = {
     }
 
     // Create a new thread
+    const now = new Date();
     const newThread = await prisma.threads.create({
       data: {
         id: generateId(),
         type: "direct",
+        createdAt: now,
+        updatedAt: now,
         thread_participants: {
           create: [
             { id: generateId(), userId: userId1 },
