@@ -16,6 +16,7 @@ import { useAuth } from "../contexts/AuthContext";
 import NoSchoolFrame from "../components/NoSchoolFrame";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { apiService, Thread, SchoolUser } from "../services/apiService";
+import ChatScreen from "./ChatScreen";
 
 const MessagesPage: React.FC = () => {
   const { schools, selectedSchool } = useSchool();
@@ -32,6 +33,10 @@ const MessagesPage: React.FC = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const [selectedThread, setSelectedThread] = useState<{
+    threadId: string;
+    participantName: string;
+  } | null>(null);
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
@@ -150,7 +155,7 @@ const MessagesPage: React.FC = () => {
 
   const handleSelectUser = async (selectedUser: SchoolUser) => {
     try {
-      setIsModalVisible(false);
+      closeModal();
       setIsLoading(true);
 
       // Create or get existing thread
@@ -159,8 +164,12 @@ const MessagesPage: React.FC = () => {
       if (response.success) {
         // Refresh threads to include the new one
         await fetchThreads();
-        // TODO: Navigate to chat view with this thread
-        console.log("Thread created/retrieved:", response.data.thread);
+
+        // Open the chat screen
+        setSelectedThread({
+          threadId: response.data.thread.id,
+          participantName: `${selectedUser.firstName} ${selectedUser.lastName}`,
+        });
       }
     } catch (error) {
       console.error("Error creating thread:", error);
@@ -168,6 +177,21 @@ const MessagesPage: React.FC = () => {
       setIsLoading(false);
       setUserSearchQuery("");
     }
+  };
+
+  const handleThreadPress = (thread: Thread) => {
+    if (!thread.participant) return;
+
+    setSelectedThread({
+      threadId: thread.threadId,
+      participantName: `${thread.participant.firstName} ${thread.participant.lastName}`,
+    });
+  };
+
+  const handleBackFromChat = () => {
+    setSelectedThread(null);
+    // Refresh threads when coming back
+    fetchThreads();
   };
 
   const closeModal = () => {
@@ -197,7 +221,15 @@ const MessagesPage: React.FC = () => {
   };
 
   const renderAIAssistant = () => (
-    <TouchableOpacity style={styles.threadItem} onPress={() => {}}>
+    <TouchableOpacity
+      style={styles.threadItem}
+      onPress={() => {
+        setSelectedThread({
+          threadId: "ai-assistant",
+          participantName: t("messages.aiAssistant"),
+        });
+      }}
+    >
       <View style={styles.avatarContainer}>
         <View style={[styles.avatar, styles.aiAvatar]}>
           <Feather name="cpu" size={24} color="#fff" />
@@ -221,7 +253,10 @@ const MessagesPage: React.FC = () => {
     const initials = `${item.participant.firstName.charAt(0)}${item.participant.lastName.charAt(0)}`.toUpperCase();
 
     return (
-      <TouchableOpacity style={styles.threadItem} onPress={() => {}}>
+      <TouchableOpacity
+        style={styles.threadItem}
+        onPress={() => handleThreadPress(item)}
+      >
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -276,6 +311,17 @@ const MessagesPage: React.FC = () => {
       </TouchableOpacity>
     );
   };
+
+  // If a thread is selected, show the chat screen
+  if (selectedThread) {
+    return (
+      <ChatScreen
+        threadId={selectedThread.threadId}
+        participantName={selectedThread.participantName}
+        onBack={handleBackFromChat}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
