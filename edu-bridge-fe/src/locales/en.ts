@@ -57,20 +57,17 @@ export const en = {
       "Parents can navigate between different channels to see specific content relevant to each category.",
   },
   messages: {
-    title: "Direct Messages",
-    subtitle: "This is the Messages page - Coming soon!",
-    aiChatTitle: "AI Chat Assistant",
-    aiChatContent:
-      "Chat with Almee for instant answers and support. Get quick responses to common questions.",
-    teacherConversationsTitle: "Teacher Conversations",
-    teacherConversationsContent:
-      "Direct messaging with teachers like Mr. Smith (Math), Ms. Davis (Science), and other faculty members.",
-    parentNetworkTitle: "Parent Network",
-    parentNetworkContent:
-      "Connect with other parents like Jane Doe for project updates and school-related discussions.",
-    schoolAdministrationTitle: "School Administration",
-    schoolAdministrationContent:
-      "Messages from Principal Thompson and other school administrators with important documents and announcements.",
+    title: "Messages",
+    searchPlaceholder: "Search conversations...",
+    aiAssistant: "AI Assistant",
+    aiAssistantStatus: "Always available",
+    addContact: "Add Contact",
+    findPeople: "Find People",
+    searchPeople: "Search by name or email...",
+    noPeopleFound: "No people found in your school",
+    selectPerson: "Select a person to start chatting",
+    noConversations: "No conversations yet",
+    startConversation: "Start a new conversation by tapping the + button",
   },
   calendar: {
     title: "Calendar",

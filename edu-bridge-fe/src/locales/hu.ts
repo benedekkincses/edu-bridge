@@ -59,20 +59,17 @@ export const hu: TranslationKeys = {
       "A szülők navigálhatnak a különböző csatornák között, hogy az egyes kategóriákhoz kapcsolódó tartalmat láthassák.",
   },
   messages: {
-    title: "Közvetlen üzenetek",
-    subtitle: "Ez az Üzenetek oldal - Hamarosan!",
-    aiChatTitle: "AI csevegő asszisztens",
-    aiChatContent:
-      "Csevegjen Almee-vel azonnali válaszokért és támogatásért. Kapjon gyors válaszokat a gyakori kérdésekre.",
-    teacherConversationsTitle: "Tanári beszélgetések",
-    teacherConversationsContent:
-      "Közvetlen üzenetváltás tanárokkal, mint Smith úr (Matematika), Davis asszony (Természettudomány) és más oktatókkal.",
-    parentNetworkTitle: "Szülői hálózat",
-    parentNetworkContent:
-      "Kapcsolódjon más szülőkhöz, mint Jane Doe projektfrissítésekért és iskolával kapcsolatos beszélgetésekért.",
-    schoolAdministrationTitle: "Iskolai adminisztráció",
-    schoolAdministrationContent:
-      "Üzenetek Thompson igazgatótól és más iskolai adminisztrátoroktól fontos dokumentumokkal és bejelentésekkel.",
+    title: "Üzenetek",
+    searchPlaceholder: "Beszélgetések keresése...",
+    aiAssistant: "AI Asszisztens",
+    aiAssistantStatus: "Mindig elérhető",
+    addContact: "Kapcsolat hozzáadása",
+    findPeople: "Emberek keresése",
+    searchPeople: "Keresés név vagy e-mail alapján...",
+    noPeopleFound: "Nem található személy az iskolájában",
+    selectPerson: "Válasszon egy személyt a csevegés megkezdéséhez",
+    noConversations: "Még nincsenek beszélgetések",
+    startConversation: "Kezdjen új beszélgetést a + gombra koppintva",
   },
   calendar: {
     title: "Naptár",

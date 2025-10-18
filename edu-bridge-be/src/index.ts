@@ -5,6 +5,7 @@ import helloRoutes from "./routes/helloRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import schoolRoutes from "./routes/schoolRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,6 +31,7 @@ app.use("/api", helloRoutes);
 app.use("/api", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", schoolRoutes);
+app.use("/api", messageRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {

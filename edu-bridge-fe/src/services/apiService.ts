@@ -142,6 +142,84 @@ export interface SchoolsResponse {
   };
 }
 
+export interface SchoolUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+export interface SchoolUsersResponse {
+  success: boolean;
+  data: {
+    users: SchoolUser[];
+    count: number;
+  };
+}
+
+export interface ThreadParticipant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface LastMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
+export interface Thread {
+  threadId: string;
+  type: string;
+  participant: ThreadParticipant | null;
+  lastMessage: LastMessage | null;
+  updatedAt: string;
+}
+
+export interface ThreadsResponse {
+  success: boolean;
+  data: {
+    threads: Thread[];
+    count: number;
+  };
+}
+
+export interface Message {
+  id: string;
+  threadId: string;
+  senderId: string;
+  content: string;
+  attachments: any[];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface MessagesResponse {
+  success: boolean;
+  data: {
+    messages: Message[];
+    count: number;
+  };
+}
+
+export interface CreateThreadResponse {
+  success: boolean;
+  data: {
+    thread: any;
+  };
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  data: {
+    message: Message;
+  };
+}
+
 export const apiService = {
   async getHello(): Promise<HelloResponse> {
     try {
@@ -216,6 +294,82 @@ export const apiService = {
   async getSchools(): Promise<SchoolsResponse> {
     try {
       const response = await apiClient.get("/api/schools");
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  // Message API methods
+  async getSchoolUsers(schoolId: string): Promise<SchoolUsersResponse> {
+    try {
+      const response = await apiClient.get(`/api/schools/${schoolId}/users`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getUserThreads(): Promise<ThreadsResponse> {
+    try {
+      const response = await apiClient.get("/api/threads");
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async createOrGetThread(otherUserId: string): Promise<CreateThreadResponse> {
+    try {
+      const response = await apiClient.post("/api/threads", { otherUserId });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getThreadMessages(
+    threadId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<MessagesResponse> {
+    try {
+      const params = new URLSearchParams();
+      if (limit) params.append("limit", limit.toString());
+      if (offset) params.append("offset", offset.toString());
+
+      const response = await apiClient.get(
+        `/api/threads/${threadId}/messages${params.toString() ? `?${params.toString()}` : ""}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async sendMessage(
+    threadId: string,
+    content: string
+  ): Promise<SendMessageResponse> {
+    try {
+      const response = await apiClient.post(`/api/threads/${threadId}/messages`, {
+        content,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async markMessageAsRead(messageId: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/api/messages/${messageId}/read`);
       return response.data;
     } catch (error) {
       console.error("API Error:", error);
