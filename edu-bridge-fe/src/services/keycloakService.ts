@@ -167,17 +167,23 @@ class KeycloakService {
 
       const userData = await response.json();
 
+      // Parse name from full name if given_name/family_name not available
+      const fullName = userData.name || '';
+      const nameParts = fullName.trim().split(/\s+/);
+      const firstName = userData.given_name || (nameParts.length > 0 ? nameParts[0] : '');
+      const lastName = userData.family_name || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
+
       return {
         id: userData.sub,
-        username: userData.preferred_username,
-        email: userData.email,
-        firstName: userData.given_name,
-        lastName: userData.family_name,
+        username: userData.preferred_username || '',
+        email: userData.email || '',
+        firstName: firstName,
+        lastName: lastName,
         phone: userData.phone_number,
         phoneVerified: userData.phone_number_verified,
         roles: userData.realm_access?.roles || [],
-        emailVerified: userData.email_verified,
-        name: userData.name,
+        emailVerified: userData.email_verified || false,
+        name: userData.name || `${firstName} ${lastName}`.trim(),
       };
     } catch (error) {
       console.error("Get user info error:", error);

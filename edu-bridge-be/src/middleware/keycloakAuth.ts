@@ -122,11 +122,17 @@ export const verifyToken = (
       }
 
       // Upsert user in database (create or update)
+      // Extract name parts from the full name if available
+      const fullName = decodedToken.name || '';
+      const nameParts = fullName.trim().split(/\s+/);
+      const firstName = nameParts.length > 0 ? nameParts[0] : null;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
       const userData = {
         id: decodedToken.sub,
         username: decodedToken.preferred_username || null,
-        firstName: decodedToken.given_name || null,
-        lastName: decodedToken.family_name || null,
+        firstName: firstName,
+        lastName: lastName,
         email: decodedToken.email || null,
         phone: decodedToken.phone_number || null,
       };
