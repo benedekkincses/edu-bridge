@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { userService } from "../services/userService.js";
 
 // Keycloak configuration
-const KEYCLOAK_URL = "http://localhost:8080";
+const KEYCLOAK_URL = "http://10.1.3.50:8080";
 const REALM = "myrealm";
 const CLIENT_ID = "edu-bridge-backend";
 
