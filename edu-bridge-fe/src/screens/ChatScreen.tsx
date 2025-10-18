@@ -20,7 +20,7 @@ import { apiService, Message } from "../services/apiService";
 const ChatScreen: React.FC = () => {
   const route = useRoute<any>();
   const navigation = useNavigation();
-  const { threadId, participantName } = route.params;
+  const { threadId } = route.params;
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState("");
@@ -28,11 +28,15 @@ const ChatScreen: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const [participantName, setParticipantName] = useState<string>("");
+  const [participantId, setParticipantId] = useState<string | null>(null);
+  const [isLoadingParticipant, setIsLoadingParticipant] = useState(true);
   const flatListRef = useRef<FlatList>(null);
   const pollingRef = useRef<boolean>(false);
   const lastMessageTimeRef = useRef<Date>(new Date());
 
   useEffect(() => {
+    fetchThreadDetails();
     fetchMessages();
     // Start long polling
     pollingRef.current = true;
@@ -43,6 +47,34 @@ const ChatScreen: React.FC = () => {
       pollingRef.current = false;
     };
   }, [threadId]);
+
+  const fetchThreadDetails = async () => {
+    try {
+      setIsLoadingParticipant(true);
+      // Handle AI Assistant special case
+      if (threadId === "ai-assistant") {
+        setParticipantName("AI Assistant");
+        setParticipantId(null);
+        setIsLoadingParticipant(false);
+        return;
+      }
+
+      const response = await apiService.getThreadDetails(threadId);
+      if (response.success && response.data.thread.participant) {
+        const participant = response.data.thread.participant;
+        setParticipantName(`${participant.firstName} ${participant.lastName}`);
+        setParticipantId(participant.id);
+      }
+    } catch (error) {
+      console.error("Error fetching thread details:", error);
+      // Fallback to route params if provided for backwards compatibility
+      if (route.params.participantName) {
+        setParticipantName(route.params.participantName);
+      }
+    } finally {
+      setIsLoadingParticipant(false);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -372,7 +404,37 @@ const ChatScreen: React.FC = () => {
             <Feather name="arrow-left" size={24} color="#003366" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{participantName}</Text>
+            {isLoadingParticipant ? (
+              <>
+                <View style={[styles.headerAvatar, styles.skeletonAvatar]} />
+                <View style={styles.headerTextContainer}>
+                  <View style={[styles.skeletonText, styles.skeletonHeaderTitle]} />
+                </View>
+              </>
+            ) : (
+              <>
+                {participantName !== "AI Assistant" && (
+                  <View style={styles.headerAvatar}>
+                    <Text style={styles.headerAvatarText}>
+                      {participantName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </Text>
+                  </View>
+                )}
+                {participantName === "AI Assistant" && (
+                  <View style={[styles.headerAvatar, styles.aiHeaderAvatar]}>
+                    <Feather name="cpu" size={20} color="#fff" />
+                  </View>
+                )}
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.headerTitle}>{participantName}</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -464,6 +526,28 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#003366",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  aiHeaderAvatar: {
+    backgroundColor: "#7B68EE",
+  },
+  headerAvatarText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
@@ -656,6 +740,18 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: "#ccc",
+  },
+  skeletonAvatar: {
+    backgroundColor: "#e0e0e0",
+  },
+  skeletonText: {
+    backgroundColor: "#e0e0e0",
+    borderRadius: 4,
+    height: 14,
+  },
+  skeletonHeaderTitle: {
+    width: 140,
+    height: 18,
   },
 });
 

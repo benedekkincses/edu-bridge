@@ -170,6 +170,75 @@ export const messageService = {
   },
 
   /**
+   * Get thread details with participant information
+   */
+  async getThreadDetails(threadId: string, userId: string) {
+    // Verify user has access to this thread
+    const participation = await prisma.thread_participants.findFirst({
+      where: {
+        threadId,
+        userId,
+      },
+    });
+
+    if (!participation) {
+      throw new Error("User does not have access to this thread");
+    }
+
+    // Get thread with participants
+    const thread = await prisma.threads.findUnique({
+      where: { id: threadId },
+      include: {
+        thread_participants: {
+          where: {
+            userId: {
+              not: userId,
+            },
+          },
+        },
+      },
+    });
+
+    if (!thread) {
+      throw new Error("Thread not found");
+    }
+
+    // Get user data for other participants
+    const otherUserIds = thread.thread_participants.map((tp) => tp.userId);
+    const users = await prisma.users.findMany({
+      where: {
+        id: {
+          in: otherUserIds,
+        },
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+      },
+    });
+
+    // For direct threads, return the other participant
+    const participant = users[0] || null;
+
+    return {
+      threadId: thread.id,
+      type: thread.type,
+      participant: participant
+        ? {
+            id: participant.id,
+            firstName: participant.firstName || "",
+            lastName: participant.lastName || "",
+            email: participant.email || "",
+          }
+        : null,
+      createdAt: thread.createdAt,
+      updatedAt: thread.updatedAt,
+    };
+  },
+
+  /**
    * Create or get existing direct thread between two users
    */
   async createOrGetDirectThread(userId1: string, userId2: string) {

@@ -173,10 +173,9 @@ const MessagesPage: React.FC = () => {
         // Refresh threads to include the new one
         await fetchThreads();
 
-        // Open the chat screen
+        // Open the chat screen - it will fetch participant data from backend
         navigation.navigate("Chat", {
           threadId: response.data.thread.id,
-          participantName: `${selectedUser.firstName} ${selectedUser.lastName}`,
         });
       }
     } catch (error) {
@@ -190,9 +189,9 @@ const MessagesPage: React.FC = () => {
   const handleThreadPress = (thread: Thread) => {
     if (!thread.participant) return;
 
+    // Only pass threadId - ChatScreen will fetch participant data from backend
     navigation.navigate("Chat", {
       threadId: thread.threadId,
-      participantName: `${thread.participant.firstName} ${thread.participant.lastName}`,
     });
   };
 
@@ -228,7 +227,6 @@ const MessagesPage: React.FC = () => {
       onPress={() => {
         navigation.navigate("Chat", {
           threadId: "ai-assistant",
-          participantName: t("messages.aiAssistant"),
         });
       }}
     >
@@ -247,6 +245,21 @@ const MessagesPage: React.FC = () => {
         </Text>
       </View>
     </TouchableOpacity>
+  );
+
+  const renderSkeletonThread = () => (
+    <View style={styles.threadItem}>
+      <View style={styles.avatarContainer}>
+        <View style={[styles.avatar, styles.skeletonAvatar]} />
+      </View>
+      <View style={styles.threadContent}>
+        <View style={styles.threadHeader}>
+          <View style={[styles.skeletonText, styles.skeletonName]} />
+          <View style={[styles.skeletonText, styles.skeletonTime]} />
+        </View>
+        <View style={[styles.skeletonText, styles.skeletonPreview]} />
+      </View>
+    </View>
   );
 
   const renderThread = ({ item }: { item: Thread }) => {
@@ -330,9 +343,12 @@ const MessagesPage: React.FC = () => {
 
       {/* Thread list */}
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#003366" />
-        </View>
+        <>
+          {renderAIAssistant()}
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i}>{renderSkeletonThread()}</View>
+          ))}
+        </>
       ) : (
         <FlatList
           data={filteredThreads}
@@ -636,6 +652,26 @@ const styles = StyleSheet.create({
     color: "#999",
     fontFamily: "monospace",
     marginTop: 2,
+  },
+  skeletonAvatar: {
+    backgroundColor: "#e0e0e0",
+  },
+  skeletonText: {
+    backgroundColor: "#e0e0e0",
+    borderRadius: 4,
+    height: 14,
+  },
+  skeletonName: {
+    width: 120,
+    height: 16,
+  },
+  skeletonTime: {
+    width: 50,
+    height: 12,
+  },
+  skeletonPreview: {
+    width: "80%",
+    marginTop: 6,
   },
 });
 

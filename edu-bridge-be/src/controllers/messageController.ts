@@ -102,6 +102,75 @@ export const getUserThreads = async (req: Request, res: Response) => {
 
 /**
  * @swagger
+ * /api/threads/{threadId}:
+ *   get:
+ *     summary: Get thread details with participant information
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: threadId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thread details retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: User does not have access to this thread
+ *       404:
+ *         description: Thread not found
+ *       500:
+ *         description: Internal server error
+ */
+export const getThreadDetails = async (req: Request, res: Response) => {
+  try {
+    const user = getUserInfo(req);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated",
+      });
+    }
+
+    const userId = user.sub;
+    const { threadId } = req.params;
+
+    const thread = await messageService.getThreadDetails(threadId, userId);
+
+    res.json({
+      success: true,
+      data: { thread },
+    });
+  } catch (error: any) {
+    console.error("Error getting thread details:", error);
+
+    if (error.message === "User does not have access to this thread") {
+      return res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    if (error.message === "Thread not found") {
+      return res.status(404).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to retrieve thread details",
+    });
+  }
+};
+
+/**
+ * @swagger
  * /api/threads:
  *   post:
  *     summary: Create or get a direct thread with another user

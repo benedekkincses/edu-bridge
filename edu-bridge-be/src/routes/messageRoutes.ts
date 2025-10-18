@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getSchoolUsers,
   getUserThreads,
+  getThreadDetails,
   createOrGetThread,
   getThreadMessages,
   sendMessage,
@@ -20,6 +21,7 @@ router.use(verifyToken);
 // Message routes
 router.get("/schools/:schoolId/users", getSchoolUsers);
 router.get("/threads", getUserThreads);
+router.get("/threads/:threadId", getThreadDetails);
 router.post("/threads", createOrGetThread);
 router.get("/threads/:threadId/messages", getThreadMessages);
 router.post("/threads/:threadId/messages", sendMessage);

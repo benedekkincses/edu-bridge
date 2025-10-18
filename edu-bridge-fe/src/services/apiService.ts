@@ -187,6 +187,19 @@ export interface ThreadsResponse {
   };
 }
 
+export interface ThreadDetailsResponse {
+  success: boolean;
+  data: {
+    thread: {
+      threadId: string;
+      type: string;
+      participant: ThreadParticipant | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
+}
+
 export interface MessageReadStatus {
   id: string;
   messageId: string;
@@ -329,6 +342,16 @@ export const apiService = {
   async getUserThreads(): Promise<ThreadsResponse> {
     try {
       const response = await apiClient.get("/api/threads");
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getThreadDetails(threadId: string): Promise<ThreadDetailsResponse> {
+    try {
+      const response = await apiClient.get(`/api/threads/${threadId}`);
       return response.data;
     } catch (error) {
       console.error("API Error:", error);
