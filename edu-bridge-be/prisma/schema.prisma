@@ -195,14 +195,16 @@ model news_posts {
   scope                 NewsScope
   schoolId              String?
   classId               String?
-  templateType          String
+  type                  NewsPostType            @default(announcement)
   title                 String
-  content               Json
+  content               String
   attachments           Json[]                  @default([])
   publishedAt           DateTime                @default(now())
   createdAt             DateTime                @default(now())
   updatedAt             DateTime
   news_post_read_status news_post_read_status[]
+  news_likes            news_likes[]
+  poll_options          poll_options[]
   classes               classes?                @relation(fields: [classId], references: [id], onDelete: Cascade)
   schools               schools?                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
@@ -284,6 +286,39 @@ model user_privacy_settings {
   @@unique([userId, schoolId])
 }
 
+model news_likes {
+  id        String     @id
+  newsPostId String
+  userId    String     // Keycloak user ID
+  createdAt DateTime   @default(now())
+  news_posts news_posts @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+
+  @@unique([newsPostId, userId])
+  @@index([newsPostId])
+}
+
+model poll_options {
+  id         String       @id
+  newsPostId String
+  optionText String
+  createdAt  DateTime     @default(now())
+  news_posts news_posts   @relation(fields: [newsPostId], references: [id], onDelete: Cascade)
+  poll_votes poll_votes[]
+
+  @@index([newsPostId])
+}
+
+model poll_votes {
+  id           String       @id
+  pollOptionId String
+  userId       String       // Keycloak user ID
+  createdAt    DateTime     @default(now())
+  poll_options poll_options @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([pollOptionId, userId])
+  @@index([pollOptionId])
+}
+
 // Permission tables for fine-grained access control
 model school_permissions {
   id         String   @id
@@ -351,4 +386,9 @@ enum MessageStatus {
 enum UserRole {
   teacher
   parent
+}
+
+enum NewsPostType {
+  announcement
+  poll
 }

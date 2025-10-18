@@ -533,4 +533,101 @@ export const apiService = {
       throw error;
     }
   },
+
+  // News API methods
+  async getSchoolNews(schoolId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/api/news/school/${schoolId}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async getClassNews(classId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/api/news/class/${classId}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async createNews(
+    scope: "school" | "class",
+    schoolId: string | undefined,
+    classId: string | undefined,
+    type: "announcement" | "poll",
+    title: string,
+    content: string,
+    pollOptions?: string[]
+  ): Promise<any> {
+    try {
+      const response = await apiClient.post("/api/news", {
+        scope,
+        schoolId,
+        classId,
+        type,
+        title,
+        content,
+        pollOptions,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async toggleNewsLike(newsPostId: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/api/news/${newsPostId}/like`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async voteOnPoll(pollOptionId: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/api/news/poll/${pollOptionId}/vote`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async deleteNews(newsPostId: string): Promise<any> {
+    try {
+      const response = await apiClient.delete(`/api/news/${newsPostId}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async checkSchoolPostPermission(schoolId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/api/news/permissions/school/${schoolId}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async checkClassPostPermission(classId: string): Promise<any> {
+    try {
+      const response = await apiClient.get(`/api/news/permissions/class/${classId}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
 };

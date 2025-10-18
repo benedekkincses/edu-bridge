@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 import schoolRoutes from "./routes/schoolRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
+import newsRoutes from "./routes/newsRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", schoolRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", classRoutes);
+app.use("/api", newsRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {
