@@ -51,7 +51,7 @@ app.get("/", (req, res) => {
       },
     },
     keycloak: {
-      url: "http://localhost:8080",
+      url: "http://10.1.3.50:8080",
       realm: "myrealm",
       clientId: "edu-bridge-backend",
     },
