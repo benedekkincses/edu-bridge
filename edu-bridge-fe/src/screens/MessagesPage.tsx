@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSchool } from "../contexts/SchoolContext";
@@ -30,6 +31,7 @@ const MessagesPage: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<SchoolUser[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Show NoSchoolFrame if user has no schools
   if (schools.length === 0) {
@@ -111,13 +113,33 @@ const MessagesPage: React.FC = () => {
     if (!selectedSchool) return;
 
     setIsModalVisible(true);
+    slideAnim.setValue(0);
+
+    // Animate slide up
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
     setIsLoadingUsers(true);
 
     try {
       const response = await apiService.getSchoolUsers(selectedSchool.id);
       if (response.success) {
-        setSchoolUsers(response.data.users);
-        setFilteredUsers(response.data.users);
+        // Filter out users that already have existing threads
+        const existingParticipantIds = new Set(
+          threads
+            .map((thread) => thread.participant?.id)
+            .filter((id): id is string => id !== null && id !== undefined)
+        );
+
+        const availableUsers = response.data.users.filter(
+          (user) => !existingParticipantIds.has(user.id)
+        );
+
+        setSchoolUsers(availableUsers);
+        setFilteredUsers(availableUsers);
       }
     } catch (error) {
       console.error("Error fetching school users:", error);
@@ -149,8 +171,14 @@ const MessagesPage: React.FC = () => {
   };
 
   const closeModal = () => {
-    setIsModalVisible(false);
-    setUserSearchQuery("");
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsModalVisible(false);
+      setUserSearchQuery("");
+    });
   };
 
   const formatTime = (dateString: string) => {
@@ -297,12 +325,26 @@ const MessagesPage: React.FC = () => {
       {/* Add Contact Modal */}
       <Modal
         visible={isModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [600, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t("messages.findPeople")}</Text>
               <TouchableOpacity onPress={closeModal}>
@@ -350,7 +392,7 @@ const MessagesPage: React.FC = () => {
                 }
               />
             )}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
