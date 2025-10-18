@@ -510,4 +510,27 @@ export const apiService = {
       throw error;
     }
   },
+
+  async getClassMembers(classId: string, excludeGroupId?: string): Promise<any> {
+    try {
+      const params = excludeGroupId ? `?excludeGroupId=${excludeGroupId}` : "";
+      const response = await apiClient.get(`/api/classes/${classId}/members${params}`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  async addUserToGroup(groupId: string, userId: string): Promise<any> {
+    try {
+      const response = await apiClient.post(`/api/groups/${groupId}/members`, {
+        userId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
 };

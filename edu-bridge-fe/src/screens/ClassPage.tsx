@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSchool } from "../contexts/SchoolContext";
@@ -31,12 +32,29 @@ const ClassPage: React.FC = () => {
     selectedChannel,
     selectChannel,
     clearClassSelection,
+    refreshChannels,
   } = useClass();
   const { t } = useLocalization();
   const { user } = useAuth();
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+
+  // Create Channel Modal state
+  const [isCreateChannelModalVisible, setIsCreateChannelModalVisible] = useState(false);
+  const [channelName, setChannelName] = useState("");
+  const [channelDescription, setChannelDescription] = useState("");
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const createChannelSlideAnim = useRef(new Animated.Value(0)).current;
+
+  // Invite Modal state
+  const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [classMembers, setClassMembers] = useState<any[]>([]);
+  const [filteredMembers, setFilteredMembers] = useState<any[]>([]);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
+  const inviteSlideAnim = useRef(new Animated.Value(0)).current;
 
   // Message-related state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -64,6 +82,23 @@ const ClassPage: React.FC = () => {
       pollingRef.current = false;
     };
   }, [selectedChannel?.id, selectedClass?.id]);
+
+  // Filter members based on search query
+  useEffect(() => {
+    if (!memberSearchQuery.trim()) {
+      setFilteredMembers(classMembers);
+      return;
+    }
+
+    const query = memberSearchQuery.toLowerCase();
+    const filtered = classMembers.filter((member) => {
+      const fullName = `${member.firstName || ""} ${member.lastName || ""}`.toLowerCase();
+      const email = member.email?.toLowerCase() || "";
+      return fullName.includes(query) || email.includes(query);
+    });
+
+    setFilteredMembers(filtered);
+  }, [memberSearchQuery, classMembers]);
 
   const initializeChannelThread = async () => {
     if (!selectedChannel || !selectedClass) return;
@@ -227,6 +262,137 @@ const ClassPage: React.FC = () => {
     toggleSidebar();
     // Clear the selected class to show the selection screen
     await clearClassSelection();
+  };
+
+  const openCreateChannelModal = () => {
+    setIsCreateChannelModalVisible(true);
+    createChannelSlideAnim.setValue(0);
+
+    // Animate slide up
+    Animated.timing(createChannelSlideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeCreateChannelModal = () => {
+    Animated.timing(createChannelSlideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsCreateChannelModalVisible(false);
+      setChannelName("");
+      setChannelDescription("");
+    });
+  };
+
+  const handleCreateChannel = async () => {
+    if (!channelName.trim() || !selectedClass) return;
+
+    try {
+      setIsCreatingChannel(true);
+
+      const response = await apiService.createGroup(
+        selectedClass.id,
+        channelName.trim(),
+        channelDescription.trim() || undefined
+      );
+
+      if (response.success) {
+        // Refresh channels to show the new one
+        await refreshChannels();
+
+        // Close modal
+        closeCreateChannelModal();
+
+        // Show success message (you can add a toast notification here if you have one)
+        console.log(t("class.channelCreatedSuccess"));
+      } else {
+        console.error(t("class.channelCreatedError"));
+      }
+    } catch (error) {
+      console.error("Error creating channel:", error);
+    } finally {
+      setIsCreatingChannel(false);
+    }
+  };
+
+  const openInviteModal = async () => {
+    if (!selectedClass || !selectedChannel) return;
+
+    setIsInviteModalVisible(true);
+    inviteSlideAnim.setValue(0);
+
+    // Animate slide up
+    Animated.timing(inviteSlideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    setIsLoadingMembers(true);
+
+    try {
+      // Fetch class members excluding those already in this channel
+      const response = await apiService.getClassMembers(
+        selectedClass.id,
+        selectedChannel.id
+      );
+      if (response.success) {
+        setClassMembers(response.data.members);
+        setFilteredMembers(response.data.members);
+      }
+    } catch (error) {
+      console.error("Error fetching class members:", error);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  const closeInviteModal = () => {
+    Animated.timing(inviteSlideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsInviteModalVisible(false);
+      setMemberSearchQuery("");
+      setClassMembers([]);
+      setFilteredMembers([]);
+    });
+  };
+
+  const handleAddMember = async (memberId: string) => {
+    if (!selectedChannel) return;
+
+    try {
+      setAddingUserId(memberId);
+
+      const response = await apiService.addUserToGroup(selectedChannel.id, memberId);
+
+      if (response.success) {
+        // Show success message
+        console.log(t("class.memberAddedSuccess"));
+
+        // Refresh the channel to update member count
+        await refreshChannels();
+
+        // Remove the added member from the list
+        setClassMembers((prev) => prev.filter((m) => m.id !== memberId));
+        setFilteredMembers((prev) => prev.filter((m) => m.id !== memberId));
+      } else {
+        console.error(t("class.memberAddedError"));
+      }
+    } catch (error: any) {
+      console.error("Error adding member:", error);
+      if (error.response?.data?.error) {
+        console.error(error.response.data.error);
+      }
+    } finally {
+      setAddingUserId(null);
+    }
   };
 
   const renderChannelItem = ({ item }: { item: Channel }) => {
@@ -412,6 +578,14 @@ const ClassPage: React.FC = () => {
               </Text>
             )}
           </View>
+          {selectedChannel && (
+            <TouchableOpacity
+              style={styles.inviteButton}
+              onPress={openInviteModal}
+            >
+              <Feather name="user-plus" size={20} color="#003366" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Channel Content */}
@@ -456,6 +630,14 @@ const ClassPage: React.FC = () => {
         {/* Channels Header */}
         <View style={styles.channelSectionHeader}>
           <Text style={styles.channelSectionTitle}>{t("class.channels")}</Text>
+          {selectedClass?.permissions?.canCreateGroups && (
+            <TouchableOpacity
+              style={styles.addChannelButton}
+              onPress={openCreateChannelModal}
+            >
+              <Feather name="plus" size={16} color="#003366" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Channel List */}
@@ -476,6 +658,188 @@ const ClassPage: React.FC = () => {
           }
         />
       </Animated.View>
+
+      {/* Invite to Channel Modal */}
+      <Modal
+        visible={isInviteModalVisible}
+        animationType="none"
+        transparent={true}
+        onRequestClose={closeInviteModal}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  {
+                    translateY: inviteSlideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [600, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t("class.inviteToChannel")}</Text>
+              <TouchableOpacity onPress={closeInviteModal}>
+                <Feather name="x" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalSearchContainer}>
+              <Feather
+                name="search"
+                size={20}
+                color="#666"
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t("class.searchMembers")}
+                value={memberSearchQuery}
+                onChangeText={setMemberSearchQuery}
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            {isLoadingMembers ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#003366" />
+              </View>
+            ) : (
+              <FlatList
+                data={filteredMembers}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => {
+                  const initials = `${item.firstName?.charAt(0) || ""}${item.lastName?.charAt(0) || ""}`.toUpperCase();
+                  const isAdding = addingUserId === item.id;
+
+                  return (
+                    <View style={styles.memberItem}>
+                      <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                      </View>
+                      <View style={styles.memberInfo}>
+                        <Text style={styles.memberName}>
+                          {item.firstName} {item.lastName}
+                        </Text>
+                        {item.email && (
+                          <Text style={styles.memberEmail}>{item.email}</Text>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        style={[
+                          styles.inviteMemberButton,
+                          isAdding && styles.inviteMemberButtonDisabled,
+                        ]}
+                        onPress={() => handleAddMember(item.id)}
+                        disabled={isAdding}
+                      >
+                        {isAdding ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Text style={styles.inviteMemberButtonText}>
+                            {t("class.inviteMember")}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Feather name="users" size={60} color="#ccc" />
+                    <Text style={styles.emptyText}>
+                      {t("class.noMembersFound")}
+                    </Text>
+                  </View>
+                }
+                contentContainerStyle={
+                  filteredMembers.length === 0
+                    ? styles.emptyListContent
+                    : undefined
+                }
+              />
+            )}
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Create Channel Modal */}
+      <Modal
+        visible={isCreateChannelModalVisible}
+        animationType="none"
+        transparent={true}
+        onRequestClose={closeCreateChannelModal}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [
+                  {
+                    translateY: createChannelSlideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [600, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t("class.createChannel")}</Text>
+              <TouchableOpacity onPress={closeCreateChannelModal}>
+                <Feather name="x" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>{t("class.channelName")}</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder={t("class.channelNamePlaceholder")}
+                placeholderTextColor="#999"
+                value={channelName}
+                onChangeText={setChannelName}
+                autoFocus
+              />
+
+              <Text style={styles.inputLabel}>{t("class.channelDescription")}</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalTextArea]}
+                placeholder={t("class.channelDescriptionPlaceholder")}
+                placeholderTextColor="#999"
+                value={channelDescription}
+                onChangeText={setChannelDescription}
+                multiline
+                numberOfLines={3}
+              />
+
+              <TouchableOpacity
+                style={[
+                  styles.createButton,
+                  (!channelName.trim() || isCreatingChannel) && styles.createButtonDisabled,
+                ]}
+                onPress={handleCreateChannel}
+                disabled={!channelName.trim() || isCreatingChannel}
+              >
+                {isCreatingChannel ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.createButtonText}>
+                    {t("class.createChannelButton")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -623,6 +987,9 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   channelSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: "#f8f9fa",
@@ -633,6 +1000,11 @@ const styles = StyleSheet.create({
     color: "#999",
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  addChannelButton: {
+    padding: 6,
+    borderRadius: 4,
+    backgroundColor: "#E8F0F8",
   },
   channelList: {
     paddingVertical: 8,
@@ -739,6 +1111,147 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: "#ccc",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+  },
+  modalBody: {
+    padding: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  modalInput: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#333",
+  },
+  modalTextArea: {
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  createButton: {
+    backgroundColor: "#003366",
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+  },
+  createButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
+  createButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  inviteButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  modalSearchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  memberItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#003366",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  avatarText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  memberEmail: {
+    fontSize: 14,
+    color: "#666",
+  },
+  inviteMemberButton: {
+    backgroundColor: "#003366",
+    borderRadius: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minWidth: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inviteMemberButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
+  inviteMemberButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyListContent: {
+    flexGrow: 1,
   },
 });
 

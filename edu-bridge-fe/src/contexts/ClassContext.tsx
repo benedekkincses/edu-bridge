@@ -17,6 +17,12 @@ export interface Channel {
   memberCount: number;
 }
 
+export interface ClassPermissions {
+  canPostNews: boolean;
+  canCreateGroups: boolean;
+  canDeleteMessages: boolean;
+}
+
 export interface ClassInfo {
   id: string;
   name: string;
@@ -25,6 +31,7 @@ export interface ClassInfo {
   schoolName: string;
   studentCount?: number;
   channels: Channel[];
+  permissions?: ClassPermissions;
 }
 
 interface ClassContextType {
@@ -36,6 +43,7 @@ interface ClassContextType {
   selectChannel: (channel: Channel) => void;
   clearClassSelection: () => Promise<void>;
   refreshClasses: () => Promise<void>;
+  refreshChannels: () => Promise<void>;
 }
 
 const ClassContext = createContext<ClassContextType | undefined>(undefined);
@@ -100,6 +108,7 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
           schoolName: cls.schoolName,
           studentCount: cls.studentCount,
           channels: [], // Will be fetched separately
+          permissions: cls.permissions, // Include user permissions
         }));
 
         setClasses(userClasses);
@@ -136,10 +145,11 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
       if (response.success) {
         const channels = response.data.groups;
 
-        // Update the class info with fetched channels
+        // Update the class info with fetched channels, preserving permissions
         const updatedClass = {
           ...classInfo,
           channels,
+          permissions: classInfo.permissions, // Preserve permissions
         };
 
         setSelectedClass(updatedClass);
@@ -200,6 +210,41 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
     await fetchClasses();
   };
 
+  const refreshChannels = async () => {
+    if (!selectedClass) return;
+
+    try {
+      // Re-fetch channels for the current class
+      const response = await apiService.getClassGroups(selectedClass.id);
+
+      if (response.success) {
+        const channels = response.data.groups;
+
+        // Update the selected class with new channels
+        const updatedClass = {
+          ...selectedClass,
+          channels,
+        };
+
+        setSelectedClass(updatedClass);
+
+        // Keep the currently selected channel if it still exists
+        if (selectedChannel) {
+          const stillExists = channels.find((ch: Channel) => ch.id === selectedChannel.id);
+          if (!stillExists) {
+            // Select first channel if current one was deleted
+            setSelectedChannel(channels.length > 0 ? channels[0] : null);
+          }
+        } else if (channels.length > 0) {
+          // Auto-select first channel if none selected
+          setSelectedChannel(channels[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing channels:", error);
+    }
+  };
+
   const value: ClassContextType = {
     classes,
     selectedClass,
@@ -209,6 +254,7 @@ export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
     selectChannel,
     clearClassSelection,
     refreshClasses,
+    refreshChannels,
   };
 
   return (

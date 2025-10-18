@@ -492,6 +492,7 @@ export const messageService = {
 
   /**
    * Create or get a group thread (chat history)
+   * Also ensures all current group members are thread participants
    */
   async createOrGetGroupThread(groupId: string) {
     const existingThread = await prisma.threads.findUnique({
@@ -507,6 +508,37 @@ export const messageService = {
     });
 
     if (existingThread) {
+      // Check if there are any group members who are not thread participants
+      const participantUserIds = new Set(
+        existingThread.thread_participants.map((p) => p.userId)
+      );
+      const groupMemberIds = existingThread.groups!.group_memberships.map((m) => m.userId);
+
+      // Find members who need to be added to thread
+      const missingMembers = groupMemberIds.filter(
+        (memberId) => !participantUserIds.has(memberId)
+      );
+
+      // Add missing members as thread participants
+      if (missingMembers.length > 0) {
+        await prisma.thread_participants.createMany({
+          data: missingMembers.map((userId) => ({
+            id: generateId(),
+            threadId: existingThread.id,
+            userId,
+          })),
+        });
+
+        // Re-fetch thread with updated participants
+        return await prisma.threads.findUnique({
+          where: { groupId },
+          include: {
+            thread_participants: true,
+            groups: true,
+          },
+        });
+      }
+
       return existingThread;
     }
 
