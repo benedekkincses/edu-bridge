@@ -55,9 +55,9 @@ app.get("/", (req, res) => {
       },
     },
     keycloak: {
-      url: "http://10.1.3.50:8080",
-      realm: "myrealm",
-      clientId: "edu-bridge-backend",
+      url: process.env.KEYCLOAK_URL || "http://localhost:8080",
+      realm: process.env.KEYCLOAK_REALM || "myrealm",
+      clientId: process.env.KEYCLOAK_CLIENT_ID || "edu-bridge-backend",
     },
   });
 });

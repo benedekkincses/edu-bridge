@@ -1,8 +1,8 @@
 import axios from "axios";
 import KeycloakService from "./keycloakService";
 
-// Use your computer's IP address for mobile devices
-const BASE_URL = "http://10.1.3.50:3000";
+// Use environment variable for API URL
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
 // Callback for handling authentication failures
 let onAuthFailureCallback: (() => void) | null = null;

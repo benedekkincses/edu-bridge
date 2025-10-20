@@ -4,9 +4,9 @@ import { Request, Response, NextFunction } from "express";
 import { userService } from "../services/userService.js";
 
 // Keycloak configuration
-const KEYCLOAK_URL = "http://10.1.3.50:8080";
-const REALM = "myrealm";
-const CLIENT_ID = "edu-bridge-backend";
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://localhost:8080";
+const REALM = process.env.KEYCLOAK_REALM || "myrealm";
+const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID || "edu-bridge-backend";
 
 // JWKS client for fetching public keys
 const client = jwksClient({

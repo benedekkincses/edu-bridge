@@ -15,7 +15,7 @@ services:
       KC_HOSTNAME_STRICT: false
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
-      KC_HOSTNAME_URL: http://10.1.3.50:8080
+      KC_HOSTNAME_URL: http://192.168.0.145:8080
     ports:
       - "8080:8080"
     depends_on:

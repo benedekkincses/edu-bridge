@@ -2,8 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 // Keycloak configuration
-// Use your computer's IP address for mobile devices
-const KEYCLOAK_URL = "http://10.1.3.50:8080";
+// Use environment variable for Keycloak URL
+const KEYCLOAK_URL = process.env.EXPO_PUBLIC_KEYCLOAK_URL || "http://localhost:8080";
 const REALM = "myrealm";
 const CLIENT_ID = "edu-bridge-frontend";
 
